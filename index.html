@@ -762,6 +762,7 @@ let allMonths = {};       // { 'YYYY-MM': monthData }
 let config = defaultConfig();
 let unsubMeses = null, unsubConfig = null;
 let saveTimers = {};
+let pendingLocal = new Set(); // meses com edição local ainda não confirmada no Firestore
 let chartRefs = {};
 let primeiraCargaMeses = true;
 let primeiraCargaConfig = true;
@@ -814,8 +815,11 @@ function iniciarSincronizacao(){
   primeiraCargaConfig = true;
 
   unsubMeses = onSnapshot(collection(db, 'meses'), (snap) => {
-    allMonths = {};
-    snap.forEach(d => { allMonths[d.id] = d.data(); });
+    const novo = {};
+    snap.forEach(d => { novo[d.id] = d.data(); });
+    // não deixa uma atualização vinda do banco apagar uma edição local que ainda não terminou de salvar
+    pendingLocal.forEach(key => { if(allMonths[key]) novo[key] = allMonths[key]; });
+    allMonths = novo;
     if(!allMonths[currentMonth]){
       allMonths[currentMonth] = defaultMonthData();
       salvarMes(currentMonth, allMonths[currentMonth]);
@@ -848,11 +852,16 @@ function verificarCargaCompleta(){
 }
 
 function salvarMes(key, data){
-  setDoc(doc(db, 'meses', key), data).then(()=> toast('Sincronizado')).catch(err=>{
+  setDoc(doc(db, 'meses', key), data).then(()=> {
+    pendingLocal.delete(key);
+    toast('Sincronizado');
+  }).catch(err=>{
+    pendingLocal.delete(key);
     console.error(err); toast('Erro ao salvar — verifique conexão');
   });
 }
 function salvarMesDebounced(key){
+  pendingLocal.add(key);
   clearTimeout(saveTimers[key]);
   saveTimers[key] = setTimeout(()=> salvarMes(key, allMonths[key]), 1800);
 }
