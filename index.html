@@ -299,6 +299,9 @@ main{max-width:1360px;margin:0 auto;padding:22px;}
 
 .slider-row{display:flex;align-items:center;gap:14px;}
 input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
+input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent,var(--teal));cursor:pointer;}
+input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
+.check-line{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:12.5px;color:var(--muted);cursor:pointer;}
 .slider-val{font-family:var(--font-mono);font-weight:700;min-width:52px;text-align:right;color:var(--accent,var(--teal));}
 
 .radio-group{display:flex;gap:10px;}
@@ -401,6 +404,15 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
         </div>
       </div>
 
+      <div class="card" style="--accent:var(--teal);margin-bottom:16px;">
+        <div class="card-head">
+          <div class="card-title">Contas do mês <span>pagas × pendentes</span></div>
+          <div class="card-total" id="contas-pct">0%</div>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="contas-progress" style="--accent:var(--teal);width:0%"></div></div>
+        <div class="hint" id="contas-texto">Marque as despesas como pagas nas abas Despesas da Casa, Financiamento &amp; Condomínio, Carro e Acordos para acompanhar aqui.</div>
+      </div>
+
       <div class="grid grid-3" style="margin-bottom:16px;align-items:stretch;">
         <div class="card gauge-card" style="grid-column:span 1;">
           <div class="gauge-svg-wrap">
@@ -471,9 +483,10 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
           <div class="card-total" id="total-despesas" style="color:var(--magenta)">R$ 0,00</div>
         </div>
         <table class="tabela">
-          <thead><tr><th>Categoria</th><th>Valor do mês</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th>Categoria</th><th>Valor do mês</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-despesas"></tbody>
         </table>
+        <div class="hint" id="sub-despesas"></div>
         <button class="btn-add" id="add-despesa" style="--accent:var(--magenta)">+ Adicionar categoria</button>
       </div>
     </section>
@@ -485,8 +498,8 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
           <div class="card-head"><div class="card-title">Financiamento da casa</div></div>
           <div class="campo-inline"><label>Descrição</label><input type="text" id="fin-descricao" placeholder="Financiamento da casa própria"></div>
           <div class="campo-row">
-            <div class="campo-inline"><label>Parcela mensal (R$)</label><input type="number" step="0.01" min="0" id="fin-parcela"></div>
-            <div class="campo-inline"><label>Saldo devedor (R$)</label><input type="number" step="0.01" min="0" id="fin-saldo"></div>
+            <div class="campo-inline"><label>Parcela mensal (R$)</label><input type="text" inputmode="decimal" id="fin-parcela"></div>
+            <div class="campo-inline"><label>Saldo devedor (R$)</label><input type="text" inputmode="decimal" id="fin-saldo"></div>
           </div>
           <div class="campo-row">
             <div class="campo-inline"><label>Parcelas totais</label><input type="number" min="0" id="fin-total"></div>
@@ -494,11 +507,13 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
           </div>
           <div class="progress-track"><div class="progress-fill" id="fin-progress" style="--accent:var(--blue);width:0%"></div></div>
           <div class="hint" id="fin-texto"></div>
+          <label class="check-line"><input type="checkbox" id="fin-pago"> Parcela deste mês já paga</label>
         </div>
         <div class="card" style="--accent:var(--blue)">
           <div class="card-head"><div class="card-title">Condomínio mensal</div></div>
-          <div class="campo-inline"><label>Valor do condomínio (R$)</label><input type="number" step="0.01" min="0" id="cond-valor"></div>
+          <div class="campo-inline"><label>Valor do condomínio (R$)</label><input type="text" inputmode="decimal" id="cond-valor"></div>
           <div class="hint">Lançado automaticamente como despesa fixa mensal do mês selecionado.</div>
+          <label class="check-line"><input type="checkbox" id="cond-pago"> Condomínio deste mês já pago</label>
         </div>
       </div>
     </section>
@@ -509,10 +524,11 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
         <div class="card" style="--accent:var(--amber)">
           <div class="card-head"><div class="card-title">Custos fixos do carro</div></div>
           <div class="campo-row">
-            <div class="campo-inline"><label>Manutenção do mês (R$)</label><input type="number" step="0.01" min="0" id="carro-manutencao"></div>
-            <div class="campo-inline"><label>Seguro do mês (R$)</label><input type="number" step="0.01" min="0" id="carro-seguro"></div>
+            <div class="campo-inline"><label>Manutenção do mês (R$)</label><input type="text" inputmode="decimal" id="carro-manutencao"></div>
+            <div class="campo-inline"><label>Seguro do mês (R$)</label><input type="text" inputmode="decimal" id="carro-seguro"></div>
           </div>
-          <div class="campo-inline"><label>Outros custos (R$)</label><input type="number" step="0.01" min="0" id="carro-outros"></div>
+          <div class="campo-inline"><label>Outros custos (R$)</label><input type="text" inputmode="decimal" id="carro-outros"></div>
+          <label class="check-line"><input type="checkbox" id="carro-pago"> Custos fixos do carro já pagos este mês</label>
         </div>
         <div class="card kpi" style="--accent:var(--amber)">
           <div class="kpi-label">Total gasto com carro no mês</div>
@@ -542,7 +558,7 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
           <div class="card-total" id="total-acordos" style="color:var(--magenta)">R$ 0,00</div>
         </div>
         <table class="tabela">
-          <thead><tr><th>Descrição</th><th>Parcela (R$)</th><th>Parcelas totais</th><th>Parcelas pagas</th><th>Situação</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th>Descrição</th><th>Parcela (R$)</th><th>Parcelas totais</th><th>Parcelas pagas</th><th>Pago?</th><th>Situação</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-acordos"></tbody>
         </table>
         <button class="btn-add" id="add-acordo" style="--accent:var(--magenta)">+ Adicionar acordo</button>
@@ -556,10 +572,10 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
         <div class="card" style="--accent:var(--violet)">
           <div class="card-head"><div class="card-title">Reserva para férias</div></div>
           <div class="campo-row">
-            <div class="campo-inline"><label>Meta (R$)</label><input type="number" step="0.01" min="0" id="ferias-meta"></div>
-            <div class="campo-inline"><label>Valor já guardado (R$)</label><input type="number" step="0.01" min="0" id="ferias-atual"></div>
+            <div class="campo-inline"><label>Meta (R$)</label><input type="text" inputmode="decimal" id="ferias-meta"></div>
+            <div class="campo-inline"><label>Valor já guardado (R$)</label><input type="text" inputmode="decimal" id="ferias-atual"></div>
           </div>
-          <div class="campo-inline"><label>Aporte planejado este mês (R$)</label><input type="number" step="0.01" min="0" id="ferias-aporte"></div>
+          <div class="campo-inline"><label>Aporte planejado este mês (R$)</label><input type="text" inputmode="decimal" id="ferias-aporte"></div>
           <div class="progress-track"><div class="progress-fill" id="ferias-progress" style="--accent:var(--violet);width:0%"></div></div>
           <div class="hint" id="ferias-texto"></div>
         </div>
@@ -621,7 +637,7 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
               <span class="slider-val" id="mesada-percentual-val">0%</span>
             </div>
           </div>
-          <div class="campo-inline"><label>Valor definido manualmente (opcional — sobrepõe a sugestão)</label><input type="number" step="0.01" min="0" id="mesada-manual"></div>
+          <div class="campo-inline"><label>Valor definido manualmente (opcional — sobrepõe a sugestão)</label><input type="text" inputmode="decimal" id="mesada-manual"></div>
         </div>
         <div class="card kpi" style="--accent:var(--teal)">
           <div class="kpi-label">Valor sugerido este mês</div>
@@ -669,6 +685,19 @@ const fmt = new Intl.NumberFormat('pt-BR', { style:'currency', currency:'BRL' })
 const fmtNum = (v) => fmt.format(isFinite(v) ? v : 0);
 const uid = () => Math.random().toString(36).slice(2,10);
 const clamp = (v,min,max) => Math.max(min, Math.min(max, v));
+// Aceita valores digitados no formato brasileiro (1.234,56) ou simples (1234.56 / 1234,56)
+function parseBRL(str){
+  if(str == null) return 0;
+  str = String(str).trim();
+  if(str === '') return 0;
+  if(str.includes(',')){ str = str.replace(/\./g,'').replace(',', '.'); }
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : n;
+}
+// Formata número para exibição editável em campo de texto (sem símbolo de moeda)
+function formatBRLInput(n){
+  return (parseFloat(n)||0).toLocaleString('pt-BR', { minimumFractionDigits:2, maximumFractionDigits:2 });
+}
 const monthKeyNow = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -698,16 +727,16 @@ function defaultMonthData(){
       { id: uid(), titular:'Esposa', instituicao:'Instituição 4', descricao:'Renda extra', valor:0 }
     ],
     despesasCasa: [
-      { id: uid(), categoria:'⚡ Luz', valor:0 },
-      { id: uid(), categoria:'💧 Água', valor:0 },
-      { id: uid(), categoria:'🔥 Gás', valor:0 },
-      { id: uid(), categoria:'🌐 Internet', valor:0 },
-      { id: uid(), categoria:'🔧 Manutenção', valor:0 },
-      { id: uid(), categoria:'🛒 Mercado / Compras', valor:0 }
+      { id: uid(), categoria:'⚡ Luz', valor:0, pago:false },
+      { id: uid(), categoria:'💧 Água', valor:0, pago:false },
+      { id: uid(), categoria:'🔥 Gás', valor:0, pago:false },
+      { id: uid(), categoria:'🌐 Internet', valor:0, pago:false },
+      { id: uid(), categoria:'🔧 Manutenção', valor:0, pago:false },
+      { id: uid(), categoria:'🛒 Mercado / Compras', valor:0, pago:false }
     ],
-    financiamento: { descricao:'Financiamento da casa própria', parcela:0, saldoDevedor:0, parcelasRestantes:0, parcelasTotais:0 },
-    condominio: { valor:0 },
-    carro: { combustivel: [], manutencao:0, seguro:0, outros:0 },
+    financiamento: { descricao:'Financiamento da casa própria', parcela:0, saldoDevedor:0, parcelasRestantes:0, parcelasTotais:0, pago:false },
+    condominio: { valor:0, pago:false },
+    carro: { combustivel: [], manutencao:0, seguro:0, outros:0, custosPagos:false },
     acordos: [],
     reservaFerias: { meta:0, valorAtual:0, aporteMes:0 },
     investimentos: [],
@@ -870,14 +899,20 @@ seletorMes.addEventListener('change', ()=>{
 /* ============ CÁLCULOS ============ */
 function somaArr(arr, campo){ return arr.reduce((s,i)=> s + (parseFloat(i[campo])||0), 0); }
 
+function acordoQuitado(a){
+  const totais = parseInt(a.parcelasTotais)||0, pagas = parseInt(a.parcelasPagas)||0;
+  return totais>0 && pagas>=totais;
+}
 function resumoMes(m){
   const receitaTotal = somaArr(m.receitas, 'valor');
   const despesaCasaTotal = somaArr(m.despesasCasa, 'valor');
   const financiamentoValor = parseFloat(m.financiamento.parcela)||0;
   const condominioValor = parseFloat(m.condominio.valor)||0;
   const combustivelTotal = somaArr(m.carro.combustivel, 'valor');
-  const carroTotal = combustivelTotal + (parseFloat(m.carro.manutencao)||0) + (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
-  const acordosTotal = somaArr(m.acordos, 'parcela');
+  const carroFixoTotal = (parseFloat(m.carro.manutencao)||0) + (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
+  const carroTotal = combustivelTotal + carroFixoTotal;
+  const acordosAtivos = m.acordos.filter(a=>!acordoQuitado(a));
+  const acordosTotal = somaArr(acordosAtivos, 'parcela');
   const investAporteTotal = somaArr(m.investimentos, 'aporteMes');
   const investSaldoTotal = somaArr(m.investimentos, 'valorAtual');
   const reservaAporte = parseFloat(m.reservaFerias.aporteMes)||0;
@@ -897,6 +932,17 @@ function resumoMes(m){
   const despesaTotalGeral = despesaFixaTotal + investAporteTotal + reservaAporte + mesadaEfetiva;
   const poupancaPercent = receitaTotal>0 ? ((investAporteTotal+reservaAporte)/receitaTotal*100) : 0;
 
+  // Contas pagas x pendentes do mês
+  const despesaCasaPaga = somaArr(m.despesasCasa.filter(d=>d.pago), 'valor');
+  const financiamentoPago = m.financiamento.pago ? financiamentoValor : 0;
+  const condominioPago = m.condominio.pago ? condominioValor : 0;
+  const carroFixoPago = m.carro.custosPagos ? carroFixoTotal : 0;
+  const acordosPagoMes = somaArr(acordosAtivos.filter(a=>a.pagoMes), 'parcela');
+  const contasTotal = despesaFixaTotal;
+  const contasPagas = despesaCasaPaga + financiamentoPago + condominioPago + combustivelTotal + carroFixoPago + acordosPagoMes;
+  const contasPendentes = Math.max(0, contasTotal - contasPagas);
+  const pctPago = contasTotal>0 ? clamp((contasPagas/contasTotal)*100,0,100) : 100;
+
   let score = 50 + poupancaPercent*1.4 + (saldo>=0 ? 14 : -26);
   if(receitaTotal>0 && (saldo/receitaTotal) > 0.12) score += 10;
   if(despesaFixaTotal > receitaTotal) score -= 15;
@@ -904,9 +950,11 @@ function resumoMes(m){
 
   return {
     receitaTotal, despesaCasaTotal, financiamentoValor, condominioValor,
-    combustivelTotal, carroTotal, acordosTotal, investAporteTotal, investSaldoTotal,
+    combustivelTotal, carroFixoTotal, carroTotal, acordosTotal, investAporteTotal, investSaldoTotal,
     reservaAporte, despesaFixaTotal, saldoAntesMesada, mesadaSugerida, mesadaEfetiva,
-    saldo, despesaTotalGeral, poupancaPercent, score
+    saldo, despesaTotalGeral, poupancaPercent, score,
+    despesaCasaPaga, financiamentoPago, condominioPago, carroFixoPago, acordosPagoMes,
+    contasTotal, contasPagas, contasPendentes, pctPago
   };
 }
 
@@ -967,7 +1015,7 @@ function renderReceitas(){
           </select></td>
       <td><input type="text" data-id="${r.id}" data-campo="instituicao" class="in-receita" value="${escAttr(r.instituicao)}"></td>
       <td><input type="text" data-id="${r.id}" data-campo="descricao" class="in-receita" value="${escAttr(r.descricao)}"></td>
-      <td><input type="number" step="0.01" min="0" data-id="${r.id}" data-campo="valor" class="in-receita" value="${r.valor}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${r.id}" data-campo="valor" class="in-receita" value="${formatBRLInput(r.valor)}"></td>
       <td class="col-acao"><button class="btn-del" data-del="${r.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
@@ -977,10 +1025,10 @@ document.getElementById('tbody-receitas').addEventListener('input', (e)=>{
   const el = e.target.closest('.in-receita'); if(!el) return;
   const m = getMonthData();
   const row = m.receitas.find(r=>r.id===el.dataset.id); if(!row) return;
-  row[el.dataset.campo] = el.dataset.campo==='valor' ? parseFloat(el.value)||0 : el.value;
+  row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
   document.getElementById('total-receitas').textContent = fmtNum(somaArr(m.receitas,'valor'));
   salvarMesDebounced(currentMonth);
-  renderVisaoGeralLeve();
+  agendarVisaoGeral();
 });
 document.getElementById('tbody-receitas').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]'); if(!del) return;
@@ -1003,20 +1051,36 @@ function renderDespesas(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input type="text" data-id="${d.id}" data-campo="categoria" class="in-despesa" value="${escAttr(d.categoria)}"></td>
-      <td><input type="number" step="0.01" min="0" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${d.valor}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${formatBRLInput(d.valor)}"></td>
+      <td style="text-align:center;"><input type="checkbox" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></td>
       <td class="col-acao"><button class="btn-del" data-del="${d.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
-  document.getElementById('total-despesas').textContent = fmtNum(somaArr(m.despesasCasa,'valor'));
+  atualizarTotalDespesas();
+}
+function atualizarTotalDespesas(){
+  const m = getMonthData();
+  const total = somaArr(m.despesasCasa,'valor');
+  const paga = somaArr(m.despesasCasa.filter(d=>d.pago),'valor');
+  document.getElementById('total-despesas').textContent = fmtNum(total);
+  document.getElementById('sub-despesas').textContent = `pago: ${fmtNum(paga)} · pendente: ${fmtNum(total-paga)}`;
 }
 document.getElementById('tbody-despesas').addEventListener('input', (e)=>{
   const el = e.target.closest('.in-despesa'); if(!el) return;
   const m = getMonthData();
   const row = m.despesasCasa.find(d=>d.id===el.dataset.id); if(!row) return;
-  row[el.dataset.campo] = el.dataset.campo==='valor' ? parseFloat(el.value)||0 : el.value;
-  document.getElementById('total-despesas').textContent = fmtNum(somaArr(m.despesasCasa,'valor'));
+  row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
+  atualizarTotalDespesas();
   salvarMesDebounced(currentMonth);
-  renderVisaoGeralLeve();
+  agendarVisaoGeral();
+});
+document.getElementById('tbody-despesas').addEventListener('change', (e)=>{
+  const chk = e.target.closest('.chk-despesa'); if(!chk) return;
+  const m = getMonthData();
+  const row = m.despesasCasa.find(d=>d.id===chk.dataset.id); if(!row) return;
+  row.pago = chk.checked;
+  atualizarTotalDespesas();
+  marcarAlterado();
 });
 document.getElementById('tbody-despesas').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]'); if(!del) return;
@@ -1026,7 +1090,7 @@ document.getElementById('tbody-despesas').addEventListener('click', (e)=>{
 });
 document.getElementById('add-despesa').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0 });
+  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false });
   marcarAlterado();
 });
 
@@ -1034,12 +1098,17 @@ document.getElementById('add-despesa').addEventListener('click', ()=>{
 function renderFinanciamento(){
   const m = getMonthData();
   document.getElementById('fin-descricao').value = m.financiamento.descricao || '';
-  document.getElementById('fin-parcela').value = m.financiamento.parcela || 0;
-  document.getElementById('fin-saldo').value = m.financiamento.saldoDevedor || 0;
+  document.getElementById('fin-parcela').value = formatBRLInput(m.financiamento.parcela||0);
+  document.getElementById('fin-saldo').value = formatBRLInput(m.financiamento.saldoDevedor||0);
   document.getElementById('fin-total').value = m.financiamento.parcelasTotais || 0;
   document.getElementById('fin-restantes').value = m.financiamento.parcelasRestantes || 0;
-  document.getElementById('cond-valor').value = m.condominio.valor || 0;
-
+  document.getElementById('fin-pago').checked = !!m.financiamento.pago;
+  document.getElementById('cond-valor').value = formatBRLInput(m.condominio.valor||0);
+  document.getElementById('cond-pago').checked = !!m.condominio.pago;
+  renderFinanciamentoDerivados();
+}
+function renderFinanciamentoDerivados(){
+  const m = getMonthData();
   const totais = parseInt(m.financiamento.parcelasTotais)||0;
   const restantes = parseInt(m.financiamento.parcelasRestantes)||0;
   const pagas = Math.max(0, totais - restantes);
@@ -1053,34 +1122,39 @@ function renderFinanciamento(){
   document.getElementById(id).addEventListener('input', ()=>{
     const m = getMonthData();
     m.financiamento.descricao = document.getElementById('fin-descricao').value;
-    m.financiamento.parcela = parseFloat(document.getElementById('fin-parcela').value)||0;
-    m.financiamento.saldoDevedor = parseFloat(document.getElementById('fin-saldo').value)||0;
+    m.financiamento.parcela = parseBRL(document.getElementById('fin-parcela').value);
+    m.financiamento.saldoDevedor = parseBRL(document.getElementById('fin-saldo').value);
     m.financiamento.parcelasTotais = parseInt(document.getElementById('fin-total').value)||0;
     m.financiamento.parcelasRestantes = parseInt(document.getElementById('fin-restantes').value)||0;
-    renderFinanciamento();
+    renderFinanciamentoDerivados();
     salvarMesDebounced(currentMonth);
-    renderVisaoGeralLeve();
+    agendarVisaoGeral();
   });
+});
+document.getElementById('fin-pago').addEventListener('change', (e)=>{
+  const m = getMonthData();
+  m.financiamento.pago = e.target.checked;
+  marcarAlterado();
 });
 document.getElementById('cond-valor').addEventListener('input', ()=>{
   const m = getMonthData();
-  m.condominio.valor = parseFloat(document.getElementById('cond-valor').value)||0;
+  m.condominio.valor = parseBRL(document.getElementById('cond-valor').value);
   salvarMesDebounced(currentMonth);
-  renderVisaoGeralLeve();
+  agendarVisaoGeral();
+});
+document.getElementById('cond-pago').addEventListener('change', (e)=>{
+  const m = getMonthData();
+  m.condominio.pago = e.target.checked;
+  marcarAlterado();
 });
 
 /* ============ RENDER: CARRO ============ */
 function renderCarro(){
   const m = getMonthData();
-  document.getElementById('carro-manutencao').value = m.carro.manutencao || 0;
-  document.getElementById('carro-seguro').value = m.carro.seguro || 0;
-  document.getElementById('carro-outros').value = m.carro.outros || 0;
-
-  const combustivelTotal = somaArr(m.carro.combustivel, 'valor');
-  const total = combustivelTotal + (parseFloat(m.carro.manutencao)||0) + (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
-  document.getElementById('carro-total').textContent = fmtNum(total);
-  document.getElementById('carro-sub').textContent = `combustível: ${fmtNum(combustivelTotal)} · demais custos: ${fmtNum(total-combustivelTotal)}`;
-  document.getElementById('total-combustivel').textContent = fmtNum(combustivelTotal);
+  document.getElementById('carro-manutencao').value = formatBRLInput(m.carro.manutencao||0);
+  document.getElementById('carro-seguro').value = formatBRLInput(m.carro.seguro||0);
+  document.getElementById('carro-outros').value = formatBRLInput(m.carro.outros||0);
+  document.getElementById('carro-pago').checked = !!m.carro.custosPagos;
 
   const tbody = document.getElementById('tbody-combustivel');
   tbody.innerHTML = '';
@@ -1089,25 +1163,33 @@ function renderCarro(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><input type="date" data-id="${c.id}" data-campo="data" class="in-combustivel" value="${c.data||''}"></td>
-      <td><input type="number" step="0.01" min="0" data-id="${c.id}" data-campo="valor" class="in-combustivel" value="${c.valor||0}"></td>
-      <td><input type="number" step="0.01" min="0" data-id="${c.id}" data-campo="litros" class="in-combustivel" value="${c.litros||0}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${c.id}" data-campo="valor" class="in-combustivel" value="${formatBRLInput(c.valor||0)}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${c.id}" data-campo="litros" class="in-combustivel" value="${formatBRLInput(c.litros||0)}"></td>
       <td><input type="number" step="1" min="0" data-id="${c.id}" data-campo="km" class="in-combustivel" value="${c.km||0}"></td>
       <td class="col-acao"><button class="btn-del" data-del="${c.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
 
   renderChartCombustivel(ordenado);
+  renderCarroDerivados();
+}
+function renderCarroDerivados(){
+  const m = getMonthData();
+  const combustivelTotal = somaArr(m.carro.combustivel, 'valor');
+  const total = combustivelTotal + (parseFloat(m.carro.manutencao)||0) + (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
+  document.getElementById('carro-total').textContent = fmtNum(total);
+  document.getElementById('carro-sub').textContent = `combustível: ${fmtNum(combustivelTotal)} · demais custos: ${fmtNum(total-combustivelTotal)}`;
+  document.getElementById('total-combustivel').textContent = fmtNum(combustivelTotal);
 }
 document.getElementById('tbody-combustivel').addEventListener('input', (e)=>{
   const el = e.target.closest('.in-combustivel'); if(!el) return;
   const m = getMonthData();
   const row = m.carro.combustivel.find(c=>c.id===el.dataset.id); if(!row) return;
   const campo = el.dataset.campo;
-  row[campo] = campo==='data' ? el.value : (parseFloat(el.value)||0);
-  const combustivelTotal = somaArr(m.carro.combustivel, 'valor');
-  document.getElementById('total-combustivel').textContent = fmtNum(combustivelTotal);
+  row[campo] = campo==='data' ? el.value : (campo==='km' ? (parseFloat(el.value)||0) : parseBRL(el.value));
+  renderCarroDerivados();
   salvarMesDebounced(currentMonth);
-  renderVisaoGeralLeve();
+  agendarVisaoGeral();
 });
 document.getElementById('tbody-combustivel').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]'); if(!del) return;
@@ -1115,7 +1197,7 @@ document.getElementById('tbody-combustivel').addEventListener('click', (e)=>{
   m.carro.combustivel = m.carro.combustivel.filter(c=>c.id!==del.dataset.del);
   renderCarro();
   salvarMesDebounced(currentMonth);
-  renderVisaoGeralLeve();
+  agendarVisaoGeral();
 });
 document.getElementById('add-combustivel').addEventListener('click', ()=>{
   const m = getMonthData();
@@ -1127,13 +1209,18 @@ document.getElementById('add-combustivel').addEventListener('click', ()=>{
 ['carro-manutencao','carro-seguro','carro-outros'].forEach(id=>{
   document.getElementById(id).addEventListener('input', ()=>{
     const m = getMonthData();
-    m.carro.manutencao = parseFloat(document.getElementById('carro-manutencao').value)||0;
-    m.carro.seguro = parseFloat(document.getElementById('carro-seguro').value)||0;
-    m.carro.outros = parseFloat(document.getElementById('carro-outros').value)||0;
-    renderCarro();
+    m.carro.manutencao = parseBRL(document.getElementById('carro-manutencao').value);
+    m.carro.seguro = parseBRL(document.getElementById('carro-seguro').value);
+    m.carro.outros = parseBRL(document.getElementById('carro-outros').value);
+    renderCarroDerivados();
     salvarMesDebounced(currentMonth);
-    renderVisaoGeralLeve();
+    agendarVisaoGeral();
   });
+});
+document.getElementById('carro-pago').addEventListener('change', (e)=>{
+  const m = getMonthData();
+  m.carro.custosPagos = e.target.checked;
+  marcarAlterado();
 });
 
 /* ============ RENDER: ACORDOS ============ */
@@ -1145,20 +1232,24 @@ function renderAcordos(){
     const totais = parseInt(a.parcelasTotais)||0;
     const pagas = clamp(parseInt(a.parcelasPagas)||0, 0, totais||9999);
     const quitado = totais>0 && pagas>=totais;
+    const pagoMes = !!a.pagoMes;
     const tr = document.createElement('tr');
+    tr.dataset.rowId = a.id;
     tr.innerHTML = `
       <td><input type="text" data-id="${a.id}" data-campo="descricao" class="in-acordo" value="${escAttr(a.descricao)}"></td>
-      <td><input type="number" step="0.01" min="0" data-id="${a.id}" data-campo="parcela" class="in-acordo" value="${a.parcela||0}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${a.id}" data-campo="parcela" class="in-acordo" value="${formatBRLInput(a.parcela||0)}"></td>
       <td><input type="number" min="0" data-id="${a.id}" data-campo="parcelasTotais" class="in-acordo" value="${a.parcelasTotais||0}"></td>
       <td><input type="number" min="0" data-id="${a.id}" data-campo="parcelasPagas" class="in-acordo" value="${a.parcelasPagas||0}"></td>
-      <td><span class="badge ${quitado?'teal':'magenta'}">${quitado ? 'Quitado' : (totais>0 ? (totais-pagas)+' restantes' : 'em aberto')}</span></td>
+      <td style="text-align:center;"><input type="checkbox" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></td>
+      <td><span class="badge ${quitado||pagoMes?'teal':'magenta'}" data-badge="${a.id}">${quitado ? 'Quitado' : (pagoMes ? 'Pago este mês' : (totais>0 ? (totais-pagas)+' restantes' : 'em aberto'))}</span></td>
       <td class="col-acao"><button class="btn-del" data-del="${a.id}">✕</button></td>`;
     tbody.appendChild(tr);
   });
-  const acordosAtivos = m.acordos.filter(a=>{
-    const totais = parseInt(a.parcelasTotais)||0, pagas = parseInt(a.parcelasPagas)||0;
-    return !(totais>0 && pagas>=totais);
-  });
+  atualizarTotalAcordos();
+}
+function atualizarTotalAcordos(){
+  const m = getMonthData();
+  const acordosAtivos = m.acordos.filter(a=>!acordoQuitado(a));
   document.getElementById('total-acordos').textContent = fmtNum(somaArr(acordosAtivos,'parcela'));
 }
 document.getElementById('tbody-acordos').addEventListener('input', (e)=>{
@@ -1166,10 +1257,20 @@ document.getElementById('tbody-acordos').addEventListener('input', (e)=>{
   const m = getMonthData();
   const row = m.acordos.find(a=>a.id===el.dataset.id); if(!row) return;
   const campo = el.dataset.campo;
-  row[campo] = campo==='descricao' ? el.value : (parseFloat(el.value)||0);
-  renderAcordos();
+  row[campo] = campo==='descricao' ? el.value : (campo==='parcela' ? parseBRL(el.value) : (parseInt(el.value)||0));
+  atualizarTotalAcordos();
   salvarMesDebounced(currentMonth);
-  renderVisaoGeralLeve();
+  agendarVisaoGeral();
+  clearTimeout(saveTimers['__ui_acordos']);
+  saveTimers['__ui_acordos'] = setTimeout(renderAcordos, 900);
+});
+document.getElementById('tbody-acordos').addEventListener('change', (e)=>{
+  const chk = e.target.closest('.chk-acordo'); if(!chk) return;
+  const m = getMonthData();
+  const row = m.acordos.find(a=>a.id===chk.dataset.id); if(!row) return;
+  row.pagoMes = chk.checked;
+  renderAcordos();
+  marcarAlterado();
 });
 document.getElementById('tbody-acordos').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]'); if(!del) return;
@@ -1179,17 +1280,40 @@ document.getElementById('tbody-acordos').addEventListener('click', (e)=>{
 });
 document.getElementById('add-acordo').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0 });
+  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false });
   marcarAlterado();
 });
 
 /* ============ RENDER: RESERVAS & INVESTIMENTOS ============ */
 function renderReservasInvestimentos(){
   const m = getMonthData();
-  document.getElementById('ferias-meta').value = m.reservaFerias.meta || 0;
-  document.getElementById('ferias-atual').value = m.reservaFerias.valorAtual || 0;
-  document.getElementById('ferias-aporte').value = m.reservaFerias.aporteMes || 0;
+  document.getElementById('ferias-meta').value = formatBRLInput(m.reservaFerias.meta||0);
+  document.getElementById('ferias-atual').value = formatBRLInput(m.reservaFerias.valorAtual||0);
+  document.getElementById('ferias-aporte').value = formatBRLInput(m.reservaFerias.aporteMes||0);
 
+  document.getElementById('invest-rentab').value = config.investRentabilidade;
+  document.getElementById('invest-rentab-val').textContent = config.investRentabilidade.toFixed(2)+'%';
+  document.getElementById('invest-volat').value = config.investVolatilidade;
+  document.getElementById('invest-volat-val').textContent = config.investVolatilidade.toFixed(2)+'%';
+
+  const tbody = document.getElementById('tbody-investimentos');
+  tbody.innerHTML = '';
+  m.investimentos.forEach(inv=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" data-id="${inv.id}" data-campo="descricao" class="in-investimento" value="${escAttr(inv.descricao)}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${inv.id}" data-campo="valorAtual" class="in-investimento" value="${formatBRLInput(inv.valorAtual||0)}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${inv.id}" data-campo="aporteMes" class="in-investimento" value="${formatBRLInput(inv.aporteMes||0)}"></td>
+      <td class="col-acao"><button class="btn-del" data-del="${inv.id}">✕</button></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('total-investimentos').textContent = fmtNum(somaArr(m.investimentos,'valorAtual'));
+
+  renderReservasDerivados();
+  renderChartProjecao();
+}
+function renderReservasDerivados(){
+  const m = getMonthData();
   const meta = parseFloat(m.reservaFerias.meta)||0;
   const atual = parseFloat(m.reservaFerias.valorAtual)||0;
   const aporte = parseFloat(m.reservaFerias.aporteMes)||0;
@@ -1203,36 +1327,16 @@ function renderReservasInvestimentos(){
   } else {
     document.getElementById('ferias-texto').textContent = 'Defina a meta e o aporte mensal para ver a estimativa de prazo.';
   }
-
-  document.getElementById('invest-rentab').value = config.investRentabilidade;
-  document.getElementById('invest-rentab-val').textContent = config.investRentabilidade.toFixed(2)+'%';
-  document.getElementById('invest-volat').value = config.investVolatilidade;
-  document.getElementById('invest-volat-val').textContent = config.investVolatilidade.toFixed(2)+'%';
-
-  const tbody = document.getElementById('tbody-investimentos');
-  tbody.innerHTML = '';
-  m.investimentos.forEach(inv=>{
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="text" data-id="${inv.id}" data-campo="descricao" class="in-investimento" value="${escAttr(inv.descricao)}"></td>
-      <td><input type="number" step="0.01" min="0" data-id="${inv.id}" data-campo="valorAtual" class="in-investimento" value="${inv.valorAtual||0}"></td>
-      <td><input type="number" step="0.01" min="0" data-id="${inv.id}" data-campo="aporteMes" class="in-investimento" value="${inv.aporteMes||0}"></td>
-      <td class="col-acao"><button class="btn-del" data-del="${inv.id}">✕</button></td>`;
-    tbody.appendChild(tr);
-  });
-  document.getElementById('total-investimentos').textContent = fmtNum(somaArr(m.investimentos,'valorAtual'));
-
-  renderChartProjecao();
 }
 ['ferias-meta','ferias-atual','ferias-aporte'].forEach(id=>{
   document.getElementById(id).addEventListener('input', ()=>{
     const m = getMonthData();
-    m.reservaFerias.meta = parseFloat(document.getElementById('ferias-meta').value)||0;
-    m.reservaFerias.valorAtual = parseFloat(document.getElementById('ferias-atual').value)||0;
-    m.reservaFerias.aporteMes = parseFloat(document.getElementById('ferias-aporte').value)||0;
-    renderReservasInvestimentos();
+    m.reservaFerias.meta = parseBRL(document.getElementById('ferias-meta').value);
+    m.reservaFerias.valorAtual = parseBRL(document.getElementById('ferias-atual').value);
+    m.reservaFerias.aporteMes = parseBRL(document.getElementById('ferias-aporte').value);
+    renderReservasDerivados();
     salvarMesDebounced(currentMonth);
-    renderVisaoGeralLeve();
+    agendarVisaoGeral();
   });
 });
 document.getElementById('invest-rentab').addEventListener('input', (e)=>{
@@ -1252,11 +1356,11 @@ document.getElementById('tbody-investimentos').addEventListener('input', (e)=>{
   const m = getMonthData();
   const row = m.investimentos.find(i=>i.id===el.dataset.id); if(!row) return;
   const campo = el.dataset.campo;
-  row[campo] = campo==='descricao' ? el.value : (parseFloat(el.value)||0);
+  row[campo] = campo==='descricao' ? el.value : parseBRL(el.value);
   document.getElementById('total-investimentos').textContent = fmtNum(somaArr(m.investimentos,'valorAtual'));
   renderChartProjecao();
   salvarMesDebounced(currentMonth);
-  renderVisaoGeralLeve();
+  agendarVisaoGeral();
 });
 document.getElementById('tbody-investimentos').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]'); if(!del) return;
@@ -1264,7 +1368,7 @@ document.getElementById('tbody-investimentos').addEventListener('click', (e)=>{
   m.investimentos = m.investimentos.filter(i=>i.id!==del.dataset.del);
   renderReservasInvestimentos();
   salvarMesDebounced(currentMonth);
-  renderVisaoGeralLeve();
+  agendarVisaoGeral();
 });
 document.getElementById('add-investimento').addEventListener('click', ()=>{
   const m = getMonthData();
@@ -1276,13 +1380,17 @@ document.getElementById('add-investimento').addEventListener('click', ()=>{
 /* ============ RENDER: MESADA ============ */
 function renderMesada(){
   const m = getMonthData();
-  document.getElementById('mesada-manual').value = m.mesada.valorManual || 0;
+  document.getElementById('mesada-manual').value = formatBRLInput(m.mesada.valorManual||0);
   document.getElementById('mesada-percentual').value = config.mesadaPercentual;
   document.getElementById('mesada-percentual-val').textContent = config.mesadaPercentual+'%';
 
   document.getElementById('opt-base-saldo').classList.toggle('sel', config.mesadaBase==='saldo');
   document.getElementById('opt-base-renda').classList.toggle('sel', config.mesadaBase==='renda');
 
+  renderMesadaDerivados();
+}
+function renderMesadaDerivados(){
+  const m = getMonthData();
   const r = resumoMes(m);
   document.getElementById('mesada-sugerido').textContent = fmtNum(r.mesadaEfetiva);
   const baseTexto = config.mesadaBase==='renda' ? 'renda total combinada' : 'saldo sobrante do mês (após custos fixos, reserva e investimentos)';
@@ -1295,22 +1403,22 @@ function renderMesada(){
 document.getElementById('mesada-percentual').addEventListener('input', (e)=>{
   config.mesadaPercentual = parseInt(e.target.value);
   document.getElementById('mesada-percentual-val').textContent = config.mesadaPercentual+'%';
-  renderMesada();
-  renderVisaoGeralLeve();
+  renderMesadaDerivados();
+  agendarVisaoGeral();
   salvarConfigDebounced();
 });
 document.getElementById('mesada-manual').addEventListener('input', ()=>{
   const m = getMonthData();
-  m.mesada.valorManual = parseFloat(document.getElementById('mesada-manual').value)||0;
-  renderMesada();
-  renderVisaoGeralLeve();
+  m.mesada.valorManual = parseBRL(document.getElementById('mesada-manual').value);
+  renderMesadaDerivados();
+  agendarVisaoGeral();
   salvarMesDebounced(currentMonth);
 });
 ['opt-base-saldo','opt-base-renda'].forEach(id=>{
   document.getElementById(id).addEventListener('click', ()=>{
     config.mesadaBase = id==='opt-base-saldo' ? 'saldo' : 'renda';
-    renderMesada();
-    renderVisaoGeralLeve();
+    renderMesadaDerivados();
+    agendarVisaoGeral();
     salvarConfigDebounced();
   });
 });
@@ -1462,6 +1570,12 @@ function renderVisaoGeral(){
   document.getElementById('kpi-saldo-sub').textContent = r.saldo>=0 ? 'saldo positivo neste mês' : 'atenção: saldo negativo neste mês';
   document.getElementById('kpi-poupanca').textContent = r.poupancaPercent.toFixed(1)+'%';
 
+  document.getElementById('contas-pct').textContent = r.pctPago.toFixed(0)+'%';
+  document.getElementById('contas-progress').style.width = r.pctPago+'%';
+  document.getElementById('contas-texto').textContent = r.contasTotal>0
+    ? `Pago: ${fmtNum(r.contasPagas)} · Pendente: ${fmtNum(r.contasPendentes)} — de um total de ${fmtNum(r.contasTotal)} em contas fixas do mês.`
+    : 'Nenhuma conta fixa lançada ainda este mês.';
+
   const chip = document.getElementById('chip-saldo');
   chip.textContent = fmtNum(r.saldo);
   chip.classList.toggle('pos', r.saldo>=0);
@@ -1501,6 +1615,11 @@ function renderVisaoGeral(){
 function renderVisaoGeralLeve(){
   // reaproveita a mesma renderização — mantido separado por clareza semântica de chamadas parciais
   renderVisaoGeral();
+}
+let timerVisaoGeral = null;
+function agendarVisaoGeral(){
+  clearTimeout(timerVisaoGeral);
+  timerVisaoGeral = setTimeout(renderVisaoGeralLeve, 700);
 }
 
 /* ============ RENDER TUDO ============ */
