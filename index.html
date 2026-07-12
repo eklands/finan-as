@@ -148,6 +148,12 @@ input,select{font-family:var(--font-mono);}
 .topbar-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
 .clock{font-family:var(--font-mono);font-size:12.5px;color:var(--muted);}
 .mes-picker{display:flex;align-items:center;gap:8px;}
+.btn-mes-nav{
+  background:var(--input);border:1px solid var(--line);color:var(--text);
+  width:28px;height:28px;border-radius:8px;font-size:15px;line-height:1;
+  display:inline-flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.btn-mes-nav:hover{border-color:var(--teal);color:var(--teal);}
 .mes-picker label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
 .mes-picker input{
   background:var(--input);border:1px solid var(--line);color:var(--text);
@@ -360,7 +366,9 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
         <span class="clock" id="clock"></span>
         <div class="mes-picker">
           <label>Mês</label>
+          <button class="btn-mes-nav" id="mes-anterior" type="button" title="Mês anterior">‹</button>
           <input type="month" id="seletor-mes">
+          <button class="btn-mes-nav" id="mes-proximo" type="button" title="Próximo mês">›</button>
         </div>
         <div class="saldo-chip pos" id="chip-saldo">R$ 0,00</div>
         <div class="user-chip"><span class="sync-dot" id="sync-dot"></span><span id="user-email"></span></div>
@@ -888,13 +896,26 @@ const seletorMes = document.getElementById('seletor-mes');
 seletorMes.value = currentMonth;
 seletorMes.addEventListener('change', ()=>{
   if(!seletorMes.value) return;
-  currentMonth = seletorMes.value;
+  irParaMes(seletorMes.value);
+});
+function irParaMes(chave){
+  currentMonth = chave;
+  seletorMes.value = chave;
   if(!allMonths[currentMonth]){
     allMonths[currentMonth] = defaultMonthData();
     salvarMes(currentMonth, allMonths[currentMonth]);
   }
   renderTudo();
-});
+}
+function deslocarMes(delta){
+  let [y,mm] = currentMonth.split('-').map(Number);
+  mm += delta;
+  while(mm > 12){ mm -= 12; y++; }
+  while(mm < 1){ mm += 12; y--; }
+  irParaMes(`${y}-${String(mm).padStart(2,'0')}`);
+}
+document.getElementById('mes-anterior').addEventListener('click', ()=> deslocarMes(-1));
+document.getElementById('mes-proximo').addEventListener('click', ()=> deslocarMes(1));
 
 /* ============ CÁLCULOS ============ */
 function somaArr(arr, campo){ return arr.reduce((s,i)=> s + (parseFloat(i[campo])||0), 0); }
