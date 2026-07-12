@@ -817,13 +817,13 @@ function salvarMes(key, data){
 }
 function salvarMesDebounced(key){
   clearTimeout(saveTimers[key]);
-  saveTimers[key] = setTimeout(()=> salvarMes(key, allMonths[key]), 500);
+  saveTimers[key] = setTimeout(()=> salvarMes(key, allMonths[key]), 1800);
 }
 function salvarConfigDebounced(){
   clearTimeout(saveTimers['__config']);
   saveTimers['__config'] = setTimeout(()=>{
     setDoc(doc(db,'config','geral'), config).then(()=>toast('Sincronizado')).catch(console.error);
-  }, 500);
+  }, 1800);
 }
 
 function getMonthData(){
