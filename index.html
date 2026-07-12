@@ -491,7 +491,7 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
           <div class="card-total" id="total-despesas" style="color:var(--magenta)">R$ 0,00</div>
         </div>
         <table class="tabela">
-          <thead><tr><th>Categoria</th><th>Valor do mês</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th>Categoria</th><th>Valor do mês</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-despesas"></tbody>
         </table>
         <div class="hint" id="sub-despesas"></div>
@@ -515,12 +515,14 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
           </div>
           <div class="progress-track"><div class="progress-fill" id="fin-progress" style="--accent:var(--blue);width:0%"></div></div>
           <div class="hint" id="fin-texto"></div>
+          <div class="campo-inline" style="margin-top:12px;"><label>Data do pagamento</label><input type="date" id="fin-data"></div>
           <label class="check-line"><input type="checkbox" id="fin-pago"> Parcela deste mês já paga</label>
         </div>
         <div class="card" style="--accent:var(--blue)">
           <div class="card-head"><div class="card-title">Condomínio mensal</div></div>
           <div class="campo-inline"><label>Valor do condomínio (R$)</label><input type="text" inputmode="decimal" id="cond-valor"></div>
           <div class="hint">Lançado automaticamente como despesa fixa mensal do mês selecionado.</div>
+          <div class="campo-inline" style="margin-top:12px;"><label>Data do pagamento</label><input type="date" id="cond-data"></div>
           <label class="check-line"><input type="checkbox" id="cond-pago"> Condomínio deste mês já pago</label>
         </div>
       </div>
@@ -535,6 +537,7 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
             <div class="campo-inline"><label>Seguro do mês (R$)</label><input type="text" inputmode="decimal" id="carro-seguro"></div>
             <div class="campo-inline"><label>Outros custos (R$)</label><input type="text" inputmode="decimal" id="carro-outros"></div>
           </div>
+          <div class="campo-inline"><label>Data do pagamento</label><input type="date" id="carro-data"></div>
           <label class="check-line"><input type="checkbox" id="carro-pago"> Seguro e outros custos já pagos este mês</label>
         </div>
         <div class="card kpi" style="--accent:var(--amber)">
@@ -549,7 +552,7 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
           <div class="card-total" id="total-manutencao" style="color:var(--amber)">R$ 0,00</div>
         </div>
         <table class="tabela">
-          <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-manutencao"></tbody>
         </table>
         <div class="hint" id="sub-manutencao"></div>
@@ -577,7 +580,7 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
           <div class="card-total" id="total-acordos" style="color:var(--magenta)">R$ 0,00</div>
         </div>
         <table class="tabela">
-          <thead><tr><th>Descrição</th><th>Parcela (R$)</th><th>Parcelas totais</th><th>Parcelas pagas</th><th>Pago?</th><th>Situação</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th>Descrição</th><th>Parcela (R$)</th><th>Parcelas totais</th><th>Parcelas pagas</th><th>Data</th><th>Pago?</th><th>Situação</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-acordos"></tbody>
         </table>
         <button class="btn-add" id="add-acordo" style="--accent:var(--magenta)">+ Adicionar acordo</button>
@@ -746,16 +749,16 @@ function defaultMonthData(){
       { id: uid(), titular:'Esposa', instituicao:'Instituição 4', descricao:'Renda extra', valor:0 }
     ],
     despesasCasa: [
-      { id: uid(), categoria:'⚡ Luz', valor:0, pago:false },
-      { id: uid(), categoria:'💧 Água', valor:0, pago:false },
-      { id: uid(), categoria:'🔥 Gás', valor:0, pago:false },
-      { id: uid(), categoria:'🌐 Internet', valor:0, pago:false },
-      { id: uid(), categoria:'🔧 Manutenção', valor:0, pago:false },
-      { id: uid(), categoria:'🛒 Mercado / Compras', valor:0, pago:false }
+      { id: uid(), categoria:'⚡ Luz', valor:0, pago:false, data:'' },
+      { id: uid(), categoria:'💧 Água', valor:0, pago:false, data:'' },
+      { id: uid(), categoria:'🔥 Gás', valor:0, pago:false, data:'' },
+      { id: uid(), categoria:'🌐 Internet', valor:0, pago:false, data:'' },
+      { id: uid(), categoria:'🔧 Manutenção', valor:0, pago:false, data:'' },
+      { id: uid(), categoria:'🛒 Mercado / Compras', valor:0, pago:false, data:'' }
     ],
-    financiamento: { descricao:'Financiamento da casa própria', parcela:0, saldoDevedor:0, parcelasRestantes:0, parcelasTotais:0, pago:false },
-    condominio: { valor:0, pago:false },
-    carro: { combustivel: [], manutencaoItens: [], seguro:0, outros:0, custosPagos:false },
+    financiamento: { descricao:'Financiamento da casa própria', parcela:0, saldoDevedor:0, parcelasRestantes:0, parcelasTotais:0, pago:false, data:'' },
+    condominio: { valor:0, pago:false, data:'' },
+    carro: { combustivel: [], manutencaoItens: [], seguro:0, outros:0, custosPagos:false, segurosOutrosData:'' },
     acordos: [],
     reservaFerias: { meta:0, valorAtual:0, aporteMes:0 },
     investimentos: [],
@@ -886,7 +889,7 @@ function salvarConfigDebounced(){
 function getMonthData(){
   if(!allMonths[currentMonth]) allMonths[currentMonth] = defaultMonthData();
   const m = allMonths[currentMonth];
-  if(!m.carro) m.carro = { combustivel: [], manutencaoItens: [], seguro:0, outros:0, custosPagos:false };
+  if(!m.carro) m.carro = { combustivel: [], manutencaoItens: [], seguro:0, outros:0, custosPagos:false, segurosOutrosData:'' };
   if(!m.carro.manutencaoItens){
     m.carro.manutencaoItens = [];
     const antigo = parseFloat(m.carro.manutencao)||0;
@@ -1106,6 +1109,7 @@ function renderDespesas(){
     tr.innerHTML = `
       <td><input type="text" data-id="${d.id}" data-campo="categoria" class="in-despesa" value="${escAttr(d.categoria)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${formatBRLInput(d.valor)}"></td>
+      <td><input type="date" data-id="${d.id}" data-campo="data" class="in-despesa" value="${d.data||''}"></td>
       <td style="text-align:center;"><input type="checkbox" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></td>
       <td class="col-acao"><button class="btn-del" data-del="${d.id}">✕</button></td>`;
     tbody.appendChild(tr);
@@ -1144,7 +1148,7 @@ document.getElementById('tbody-despesas').addEventListener('click', (e)=>{
 });
 document.getElementById('add-despesa').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false });
+  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false, data:'' });
   marcarAlterado();
 });
 
@@ -1157,8 +1161,10 @@ function renderFinanciamento(){
   document.getElementById('fin-total').value = m.financiamento.parcelasTotais || 0;
   document.getElementById('fin-restantes').value = m.financiamento.parcelasRestantes || 0;
   document.getElementById('fin-pago').checked = !!m.financiamento.pago;
+  document.getElementById('fin-data').value = m.financiamento.data || '';
   document.getElementById('cond-valor').value = formatBRLInput(m.condominio.valor||0);
   document.getElementById('cond-pago').checked = !!m.condominio.pago;
+  document.getElementById('cond-data').value = m.condominio.data || '';
   renderFinanciamentoDerivados();
 }
 function renderFinanciamentoDerivados(){
@@ -1190,6 +1196,11 @@ document.getElementById('fin-pago').addEventListener('change', (e)=>{
   m.financiamento.pago = e.target.checked;
   marcarAlterado();
 });
+document.getElementById('fin-data').addEventListener('input', (e)=>{
+  const m = getMonthData();
+  m.financiamento.data = e.target.value;
+  salvarMesDebounced(currentMonth);
+});
 document.getElementById('cond-valor').addEventListener('input', ()=>{
   const m = getMonthData();
   m.condominio.valor = parseBRL(document.getElementById('cond-valor').value);
@@ -1201,6 +1212,11 @@ document.getElementById('cond-pago').addEventListener('change', (e)=>{
   m.condominio.pago = e.target.checked;
   marcarAlterado();
 });
+document.getElementById('cond-data').addEventListener('input', (e)=>{
+  const m = getMonthData();
+  m.condominio.data = e.target.value;
+  salvarMesDebounced(currentMonth);
+});
 
 /* ============ RENDER: CARRO ============ */
 function renderCarro(){
@@ -1208,6 +1224,7 @@ function renderCarro(){
   document.getElementById('carro-seguro').value = formatBRLInput(m.carro.seguro||0);
   document.getElementById('carro-outros').value = formatBRLInput(m.carro.outros||0);
   document.getElementById('carro-pago').checked = !!m.carro.custosPagos;
+  document.getElementById('carro-data').value = m.carro.segurosOutrosData || '';
 
   const tbodyM = document.getElementById('tbody-manutencao');
   tbodyM.innerHTML = '';
@@ -1216,6 +1233,7 @@ function renderCarro(){
     tr.innerHTML = `
       <td><input type="text" data-id="${it.id}" data-campo="descricao" class="in-manutencao" value="${escAttr(it.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-manutencao" value="${formatBRLInput(it.valor||0)}"></td>
+      <td><input type="date" data-id="${it.id}" data-campo="data" class="in-manutencao" value="${it.data||''}"></td>
       <td style="text-align:center;"><input type="checkbox" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></td>
       <td class="col-acao"><button class="btn-del" data-del="${it.id}">✕</button></td>`;
     tbodyM.appendChild(tr);
@@ -1275,7 +1293,7 @@ document.getElementById('tbody-manutencao').addEventListener('click', (e)=>{
 });
 document.getElementById('add-manutencao').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false });
+  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false, data:'' });
   marcarAlterado();
 });
 document.getElementById('tbody-combustivel').addEventListener('input', (e)=>{
@@ -1318,6 +1336,11 @@ document.getElementById('carro-pago').addEventListener('change', (e)=>{
   m.carro.custosPagos = e.target.checked;
   marcarAlterado();
 });
+document.getElementById('carro-data').addEventListener('input', (e)=>{
+  const m = getMonthData();
+  m.carro.segurosOutrosData = e.target.value;
+  salvarMesDebounced(currentMonth);
+});
 
 /* ============ RENDER: ACORDOS ============ */
 function renderAcordos(){
@@ -1336,6 +1359,7 @@ function renderAcordos(){
       <td><input type="text" inputmode="decimal" data-id="${a.id}" data-campo="parcela" class="in-acordo" value="${formatBRLInput(a.parcela||0)}"></td>
       <td><input type="number" min="0" data-id="${a.id}" data-campo="parcelasTotais" class="in-acordo" value="${a.parcelasTotais||0}"></td>
       <td><input type="number" min="0" data-id="${a.id}" data-campo="parcelasPagas" class="in-acordo" value="${a.parcelasPagas||0}"></td>
+      <td><input type="date" data-id="${a.id}" data-campo="data" class="in-acordo" value="${a.data||''}"></td>
       <td style="text-align:center;"><input type="checkbox" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></td>
       <td><span class="badge ${quitado||pagoMes?'teal':'magenta'}" data-badge="${a.id}">${quitado ? 'Quitado' : (pagoMes ? 'Pago este mês' : (totais>0 ? (totais-pagas)+' restantes' : 'em aberto'))}</span></td>
       <td class="col-acao"><button class="btn-del" data-del="${a.id}">✕</button></td>`;
@@ -1353,7 +1377,7 @@ document.getElementById('tbody-acordos').addEventListener('input', (e)=>{
   const m = getMonthData();
   const row = m.acordos.find(a=>a.id===el.dataset.id); if(!row) return;
   const campo = el.dataset.campo;
-  row[campo] = campo==='descricao' ? el.value : (campo==='parcela' ? parseBRL(el.value) : (parseInt(el.value)||0));
+  row[campo] = (campo==='descricao' || campo==='data') ? el.value : (campo==='parcela' ? parseBRL(el.value) : (parseInt(el.value)||0));
   atualizarTotalAcordos();
   salvarMesDebounced(currentMonth);
   agendarVisaoGeral();
@@ -1376,7 +1400,7 @@ document.getElementById('tbody-acordos').addEventListener('click', (e)=>{
 });
 document.getElementById('add-acordo').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false });
+  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data:'' });
   marcarAlterado();
 });
 
