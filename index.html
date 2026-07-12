@@ -530,19 +530,30 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
     <section class="painel" id="painel-carro">
       <div class="grid grid-2" style="margin-bottom:16px;">
         <div class="card" style="--accent:var(--amber)">
-          <div class="card-head"><div class="card-title">Custos fixos do carro</div></div>
+          <div class="card-head"><div class="card-title">Seguro e outros custos fixos</div></div>
           <div class="campo-row">
-            <div class="campo-inline"><label>Manutenção do mês (R$)</label><input type="text" inputmode="decimal" id="carro-manutencao"></div>
             <div class="campo-inline"><label>Seguro do mês (R$)</label><input type="text" inputmode="decimal" id="carro-seguro"></div>
+            <div class="campo-inline"><label>Outros custos (R$)</label><input type="text" inputmode="decimal" id="carro-outros"></div>
           </div>
-          <div class="campo-inline"><label>Outros custos (R$)</label><input type="text" inputmode="decimal" id="carro-outros"></div>
-          <label class="check-line"><input type="checkbox" id="carro-pago"> Custos fixos do carro já pagos este mês</label>
+          <label class="check-line"><input type="checkbox" id="carro-pago"> Seguro e outros custos já pagos este mês</label>
         </div>
         <div class="card kpi" style="--accent:var(--amber)">
           <div class="kpi-label">Total gasto com carro no mês</div>
           <div class="kpi-value" id="carro-total">R$ 0,00</div>
           <div class="kpi-sub" id="carro-sub"></div>
         </div>
+      </div>
+      <div class="card" style="--accent:var(--amber);margin-bottom:16px;">
+        <div class="card-head">
+          <div class="card-title">Manutenção, peças e serviços <span>consertos lançados durante o mês</span></div>
+          <div class="card-total" id="total-manutencao" style="color:var(--amber)">R$ 0,00</div>
+        </div>
+        <table class="tabela">
+          <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
+          <tbody id="tbody-manutencao"></tbody>
+        </table>
+        <div class="hint" id="sub-manutencao"></div>
+        <button class="btn-add" id="add-manutencao" style="--accent:var(--amber)">+ Adicionar item</button>
       </div>
       <div class="card" style="--accent:var(--amber)">
         <div class="card-head">
@@ -744,7 +755,7 @@ function defaultMonthData(){
     ],
     financiamento: { descricao:'Financiamento da casa própria', parcela:0, saldoDevedor:0, parcelasRestantes:0, parcelasTotais:0, pago:false },
     condominio: { valor:0, pago:false },
-    carro: { combustivel: [], manutencao:0, seguro:0, outros:0, custosPagos:false },
+    carro: { combustivel: [], manutencaoItens: [], seguro:0, outros:0, custosPagos:false },
     acordos: [],
     reservaFerias: { meta:0, valorAtual:0, aporteMes:0 },
     investimentos: [],
@@ -874,7 +885,17 @@ function salvarConfigDebounced(){
 
 function getMonthData(){
   if(!allMonths[currentMonth]) allMonths[currentMonth] = defaultMonthData();
-  return allMonths[currentMonth];
+  const m = allMonths[currentMonth];
+  if(!m.carro) m.carro = { combustivel: [], manutencaoItens: [], seguro:0, outros:0, custosPagos:false };
+  if(!m.carro.manutencaoItens){
+    m.carro.manutencaoItens = [];
+    const antigo = parseFloat(m.carro.manutencao)||0;
+    if(antigo > 0){
+      m.carro.manutencaoItens.push({ id: uid(), descricao:'Manutenção (lançamento anterior)', valor: antigo, pago: !!m.carro.custosPagos });
+    }
+    delete m.carro.manutencao;
+  }
+  return m;
 }
 function marcarAlterado(){
   salvarMesDebounced(currentMonth);
@@ -939,7 +960,10 @@ function resumoMes(m){
   const financiamentoValor = parseFloat(m.financiamento.parcela)||0;
   const condominioValor = parseFloat(m.condominio.valor)||0;
   const combustivelTotal = somaArr(m.carro.combustivel, 'valor');
-  const carroFixoTotal = (parseFloat(m.carro.manutencao)||0) + (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
+  const manutencaoTotal = somaArr(m.carro.manutencaoItens, 'valor');
+  const manutencaoPaga = somaArr(m.carro.manutencaoItens.filter(i=>i.pago), 'valor');
+  const seguroOutrosTotal = (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
+  const carroFixoTotal = manutencaoTotal + seguroOutrosTotal;
   const carroTotal = combustivelTotal + carroFixoTotal;
   const acordosAtivos = m.acordos.filter(a=>!acordoQuitado(a));
   const acordosTotal = somaArr(acordosAtivos, 'parcela');
@@ -966,7 +990,7 @@ function resumoMes(m){
   const despesaCasaPaga = somaArr(m.despesasCasa.filter(d=>d.pago), 'valor');
   const financiamentoPago = m.financiamento.pago ? financiamentoValor : 0;
   const condominioPago = m.condominio.pago ? condominioValor : 0;
-  const carroFixoPago = m.carro.custosPagos ? carroFixoTotal : 0;
+  const carroFixoPago = manutencaoPaga + (m.carro.custosPagos ? seguroOutrosTotal : 0);
   const acordosPagoMes = somaArr(acordosAtivos.filter(a=>a.pagoMes), 'parcela');
   const contasTotal = despesaFixaTotal;
   const contasPagas = despesaCasaPaga + financiamentoPago + condominioPago + combustivelTotal + carroFixoPago + acordosPagoMes;
@@ -1181,10 +1205,21 @@ document.getElementById('cond-pago').addEventListener('change', (e)=>{
 /* ============ RENDER: CARRO ============ */
 function renderCarro(){
   const m = getMonthData();
-  document.getElementById('carro-manutencao').value = formatBRLInput(m.carro.manutencao||0);
   document.getElementById('carro-seguro').value = formatBRLInput(m.carro.seguro||0);
   document.getElementById('carro-outros').value = formatBRLInput(m.carro.outros||0);
   document.getElementById('carro-pago').checked = !!m.carro.custosPagos;
+
+  const tbodyM = document.getElementById('tbody-manutencao');
+  tbodyM.innerHTML = '';
+  m.carro.manutencaoItens.forEach(it=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" data-id="${it.id}" data-campo="descricao" class="in-manutencao" value="${escAttr(it.descricao)}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-manutencao" value="${formatBRLInput(it.valor||0)}"></td>
+      <td style="text-align:center;"><input type="checkbox" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></td>
+      <td class="col-acao"><button class="btn-del" data-del="${it.id}">✕</button></td>`;
+    tbodyM.appendChild(tr);
+  });
 
   const tbody = document.getElementById('tbody-combustivel');
   tbody.innerHTML = '';
@@ -1206,11 +1241,43 @@ function renderCarro(){
 function renderCarroDerivados(){
   const m = getMonthData();
   const combustivelTotal = somaArr(m.carro.combustivel, 'valor');
-  const total = combustivelTotal + (parseFloat(m.carro.manutencao)||0) + (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
+  const manutencaoTotal = somaArr(m.carro.manutencaoItens, 'valor');
+  const manutencaoPaga = somaArr(m.carro.manutencaoItens.filter(i=>i.pago), 'valor');
+  const total = combustivelTotal + manutencaoTotal + (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
   document.getElementById('carro-total').textContent = fmtNum(total);
-  document.getElementById('carro-sub').textContent = `combustível: ${fmtNum(combustivelTotal)} · demais custos: ${fmtNum(total-combustivelTotal)}`;
+  document.getElementById('carro-sub').textContent = `combustível: ${fmtNum(combustivelTotal)} · manutenção: ${fmtNum(manutencaoTotal)} · demais custos: ${fmtNum(total-combustivelTotal-manutencaoTotal)}`;
   document.getElementById('total-combustivel').textContent = fmtNum(combustivelTotal);
+  document.getElementById('total-manutencao').textContent = fmtNum(manutencaoTotal);
+  document.getElementById('sub-manutencao').textContent = `pago: ${fmtNum(manutencaoPaga)} · pendente: ${fmtNum(manutencaoTotal-manutencaoPaga)}`;
 }
+document.getElementById('tbody-manutencao').addEventListener('input', (e)=>{
+  const el = e.target.closest('.in-manutencao'); if(!el) return;
+  const m = getMonthData();
+  const row = m.carro.manutencaoItens.find(i=>i.id===el.dataset.id); if(!row) return;
+  row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
+  renderCarroDerivados();
+  salvarMesDebounced(currentMonth);
+  agendarVisaoGeral();
+});
+document.getElementById('tbody-manutencao').addEventListener('change', (e)=>{
+  const chk = e.target.closest('.chk-manutencao'); if(!chk) return;
+  const m = getMonthData();
+  const row = m.carro.manutencaoItens.find(i=>i.id===chk.dataset.id); if(!row) return;
+  row.pago = chk.checked;
+  renderCarroDerivados();
+  marcarAlterado();
+});
+document.getElementById('tbody-manutencao').addEventListener('click', (e)=>{
+  const del = e.target.closest('[data-del]'); if(!del) return;
+  const m = getMonthData();
+  m.carro.manutencaoItens = m.carro.manutencaoItens.filter(i=>i.id!==del.dataset.del);
+  marcarAlterado();
+});
+document.getElementById('add-manutencao').addEventListener('click', ()=>{
+  const m = getMonthData();
+  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false });
+  marcarAlterado();
+});
 document.getElementById('tbody-combustivel').addEventListener('input', (e)=>{
   const el = e.target.closest('.in-combustivel'); if(!el) return;
   const m = getMonthData();
@@ -1236,10 +1303,9 @@ document.getElementById('add-combustivel').addEventListener('click', ()=>{
   renderCarro();
   salvarMesDebounced(currentMonth);
 });
-['carro-manutencao','carro-seguro','carro-outros'].forEach(id=>{
+['carro-seguro','carro-outros'].forEach(id=>{
   document.getElementById(id).addEventListener('input', ()=>{
     const m = getMonthData();
-    m.carro.manutencao = parseBRL(document.getElementById('carro-manutencao').value);
     m.carro.seguro = parseBRL(document.getElementById('carro-seguro').value);
     m.carro.outros = parseBRL(document.getElementById('carro-outros').value);
     renderCarroDerivados();
