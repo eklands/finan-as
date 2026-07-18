@@ -428,8 +428,9 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="kpi-value" id="kpi-receita">R$ 0,00</div>
         </div>
         <div class="card kpi" style="--accent:var(--magenta)">
-          <div class="kpi-label">Despesas totais do mês</div>
+          <div class="kpi-label">Despesas já pagas no mês</div>
           <div class="kpi-value" id="kpi-despesa">R$ 0,00</div>
+          <div class="kpi-sub" id="kpi-despesa-sub"></div>
         </div>
         <div class="card kpi" style="--accent:var(--violet)">
           <div class="kpi-label">Saldo do mês</div>
@@ -564,7 +565,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="hint" id="fin-texto"></div>
           <div class="campo-inline" style="margin-top:12px;"><label>Data do pagamento</label><input type="date" id="fin-data"></div>
           <div class="avatar-inline" style="margin-top:12px;font-size:12px;color:var(--muted);" id="fin-pagador-wrap"></div>
-          <label class="check-line"><input type="checkbox" id="fin-pago"> Parcela deste mês já paga</label>
+          <label class="check-line"><input type="checkbox" id="fin-pago" title="Só desconta do saldo depois de marcado como pago"> Parcela deste mês já paga</label>
         </div>
         <div class="card" style="--accent:var(--blue)">
           <div class="card-head"><div class="card-title">Condomínio mensal</div></div>
@@ -572,7 +573,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="hint">Lançado automaticamente como despesa fixa mensal do mês selecionado.</div>
           <div class="campo-inline" style="margin-top:12px;"><label>Data do pagamento</label><input type="date" id="cond-data"></div>
           <div class="avatar-inline" style="margin-top:12px;font-size:12px;color:var(--muted);" id="cond-pagador-wrap"></div>
-          <label class="check-line"><input type="checkbox" id="cond-pago"> Condomínio deste mês já pago</label>
+          <label class="check-line"><input type="checkbox" id="cond-pago" title="Só desconta do saldo depois de marcado como pago"> Condomínio deste mês já pago</label>
         </div>
       </div>
     </section>
@@ -588,7 +589,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           </div>
           <div class="campo-inline"><label>Data do pagamento</label><input type="date" id="carro-data"></div>
           <div class="avatar-inline" style="margin-top:0px;font-size:12px;color:var(--muted);" id="carro-pagador-wrap"></div>
-          <label class="check-line"><input type="checkbox" id="carro-pago"> Seguro e outros custos já pagos este mês</label>
+          <label class="check-line"><input type="checkbox" id="carro-pago" title="Só desconta do saldo depois de marcado como pago"> Seguro e outros custos já pagos este mês</label>
         </div>
         <div class="card kpi" style="--accent:var(--amber)">
           <div class="kpi-label">Total gasto com carro no mês</div>
@@ -1082,7 +1083,6 @@ function resumoMes(m){
   const condominioValor = parseFloat(m.condominio.valor)||0;
   const combustivelTotal = somaArr(m.carro.combustivel, 'valor');
   const manutencaoTotal = somaArr(m.carro.manutencaoItens, 'valor');
-  const manutencaoPaga = somaArr(m.carro.manutencaoItens.filter(i=>i.pago), 'valor');
   const seguroOutrosTotal = (parseFloat(m.carro.seguro)||0) + (parseFloat(m.carro.outros)||0);
   const carroFixoTotal = manutencaoTotal + seguroOutrosTotal;
   const carroTotal = combustivelTotal + carroFixoTotal;
@@ -1092,8 +1092,32 @@ function resumoMes(m){
   const investSaldoTotal = somaArr(m.investimentos, 'valorAtual');
   const reservaAporte = parseFloat(m.reservaFerias.aporteMes)||0;
 
+  // Total comprometido no mês (lançado, pago ou não) — usado para projeção e para o card "Contas do mês"
   const despesaFixaTotal = despesaCasaTotal + mercadoTotal + financiamentoValor + condominioValor + carroTotal + acordosTotal;
-  const saldoAntesMesada = receitaTotal - despesaFixaTotal - investAporteTotal - reservaAporte;
+
+  // Só conta como "descontado de verdade" o que está marcado como pago E não é uma duplicidade ainda não confirmada
+  const repDespesas = idsRepetidos(m.despesasCasa, 'valor');
+  const repMercado = idsRepetidos(m.mercado, 'valor');
+  const repManutencao = idsRepetidos(m.carro.manutencaoItens, 'valor');
+  const repAcordos = idsRepetidos(acordosAtivos, 'parcela');
+
+  const despesaCasaPaga = somaArr(m.despesasCasa.filter(d=>d.pago && !repDespesas.has(d.id)), 'valor');
+  const mercadoPago = somaArr(m.mercado.filter(d=>d.pago && !repMercado.has(d.id)), 'valor');
+  const manutencaoPaga = somaArr(m.carro.manutencaoItens.filter(i=>i.pago && !repManutencao.has(i.id)), 'valor');
+  const financiamentoPago = m.financiamento.pago ? financiamentoValor : 0;
+  const condominioPago = m.condominio.pago ? condominioValor : 0;
+  const carroFixoPago = manutencaoPaga + (m.carro.custosPagos ? seguroOutrosTotal : 0);
+  const acordosPagoMes = somaArr(acordosAtivos.filter(a=>a.pagoMes && !repAcordos.has(a.id)), 'parcela');
+
+  const contasTotal = despesaFixaTotal;
+  const contasPagas = despesaCasaPaga + mercadoPago + financiamentoPago + condominioPago + combustivelTotal + carroFixoPago + acordosPagoMes;
+  const contasPendentes = Math.max(0, contasTotal - contasPagas);
+  const pctPago = contasTotal>0 ? clamp((contasPagas/contasTotal)*100,0,100) : 100;
+
+  // Saldo real do mês — só desconta o que já foi efetivamente pago
+  const saldoAntesMesada = receitaTotal - contasPagas - investAporteTotal - reservaAporte;
+  // Saldo projetado — como ficaria se tudo o que está lançado fosse pago
+  const saldoProjetadoAntesMesada = receitaTotal - contasTotal - investAporteTotal - reservaAporte;
 
   let mesadaSugerida = 0;
   if(config.mesadaBase === 'renda'){
@@ -1104,31 +1128,20 @@ function resumoMes(m){
   const mesadaEfetiva = (parseFloat(m.mesada.valorManual)||0) > 0 ? parseFloat(m.mesada.valorManual) : mesadaSugerida;
 
   const saldo = saldoAntesMesada - mesadaEfetiva;
-  const despesaTotalGeral = despesaFixaTotal + investAporteTotal + reservaAporte + mesadaEfetiva;
+  const saldoProjetado = saldoProjetadoAntesMesada - mesadaEfetiva;
+  const despesaTotalGeral = contasPagas + investAporteTotal + reservaAporte + mesadaEfetiva;
   const poupancaPercent = receitaTotal>0 ? ((investAporteTotal+reservaAporte)/receitaTotal*100) : 0;
-
-  // Contas pagas x pendentes do mês
-  const despesaCasaPaga = somaArr(m.despesasCasa.filter(d=>d.pago), 'valor');
-  const mercadoPago = somaArr(m.mercado.filter(d=>d.pago), 'valor');
-  const financiamentoPago = m.financiamento.pago ? financiamentoValor : 0;
-  const condominioPago = m.condominio.pago ? condominioValor : 0;
-  const carroFixoPago = manutencaoPaga + (m.carro.custosPagos ? seguroOutrosTotal : 0);
-  const acordosPagoMes = somaArr(acordosAtivos.filter(a=>a.pagoMes), 'parcela');
-  const contasTotal = despesaFixaTotal;
-  const contasPagas = despesaCasaPaga + mercadoPago + financiamentoPago + condominioPago + combustivelTotal + carroFixoPago + acordosPagoMes;
-  const contasPendentes = Math.max(0, contasTotal - contasPagas);
-  const pctPago = contasTotal>0 ? clamp((contasPagas/contasTotal)*100,0,100) : 100;
 
   let score = 50 + poupancaPercent*1.4 + (saldo>=0 ? 14 : -26);
   if(receitaTotal>0 && (saldo/receitaTotal) > 0.12) score += 10;
-  if(despesaFixaTotal > receitaTotal) score -= 15;
+  if(contasTotal > receitaTotal) score -= 15;
   score = Math.round(clamp(score, 0, 100));
 
   return {
     receitaTotal, despesaCasaTotal, mercadoTotal, financiamentoValor, condominioValor,
     combustivelTotal, carroFixoTotal, carroTotal, acordosTotal, investAporteTotal, investSaldoTotal,
-    reservaAporte, despesaFixaTotal, saldoAntesMesada, mesadaSugerida, mesadaEfetiva,
-    saldo, despesaTotalGeral, poupancaPercent, score,
+    reservaAporte, despesaFixaTotal, saldoAntesMesada, saldoProjetadoAntesMesada, mesadaSugerida, mesadaEfetiva,
+    saldo, saldoProjetado, despesaTotalGeral, poupancaPercent, score,
     despesaCasaPaga, mercadoPago, financiamentoPago, condominioPago, carroFixoPago, acordosPagoMes,
     contasTotal, contasPagas, contasPendentes, pctPago
   };
@@ -1232,7 +1245,7 @@ function renderDespesas(){
       <td><input type="text" data-id="${d.id}" data-campo="categoria" class="in-despesa" value="${escAttr(d.categoria)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${formatBRLInput(d.valor)}"></td>
       <td><input type="date" data-id="${d.id}" data-campo="data" class="in-despesa" value="${d.data||''}"></td>
-      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(d.pagador,'despesas',d.id)}<input type="checkbox" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></div></td>
+      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(d.pagador,'despesas',d.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></div></td>
       <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select><button class="btn-del" data-del="${d.id}">✕</button></div></td>`;
     tbody.appendChild(tr);
   });
@@ -1329,7 +1342,7 @@ function renderMercado(){
       <td><input type="text" data-id="${it.id}" data-campo="descricao" class="in-mercado" value="${escAttr(it.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-mercado" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-mercado" value="${it.data||''}"></td>
-      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'mercado',it.id)}<input type="checkbox" class="chk-mercado" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
+      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'mercado',it.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-mercado" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
       <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select><button class="btn-del" data-del="${it.id}">✕</button></div></td>`;
     tbody.appendChild(tr);
   });
@@ -1473,7 +1486,7 @@ function renderCarro(){
       <td><input type="text" data-id="${it.id}" data-campo="descricao" class="in-manutencao" value="${escAttr(it.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-manutencao" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-manutencao" value="${it.data||''}"></td>
-      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'manutencao',it.id)}<input type="checkbox" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
+      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'manutencao',it.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
       <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select><button class="btn-del" data-del="${it.id}">✕</button></div></td>`;
     tbodyM.appendChild(tr);
   });
@@ -1617,7 +1630,7 @@ function renderAcordos(){
       <td><input type="number" min="0" data-id="${a.id}" data-campo="parcelasTotais" class="in-acordo" value="${a.parcelasTotais||0}"></td>
       <td><input type="number" min="0" data-id="${a.id}" data-campo="parcelasPagas" class="in-acordo" value="${a.parcelasPagas||0}"></td>
       <td><input type="date" data-id="${a.id}" data-campo="data" class="in-acordo" value="${a.data||''}"></td>
-      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(a.pagador,'acordos',a.id)}<input type="checkbox" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></div></td>
+      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(a.pagador,'acordos',a.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></div></td>
       <td><span class="badge ${quitado||pagoMes?'teal':'magenta'}" data-badge="${a.id}">${quitado ? 'Quitado' : (pagoMes ? 'Pago este mês' : (totais>0 ? (totais-pagas)+' restantes' : 'em aberto'))}</span></td>
       <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${a.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<button class="btn-del" data-del="${a.id}">✕</button></div></td>`;
     tbody.appendChild(tr);
@@ -1957,9 +1970,10 @@ function renderVisaoGeral(){
 
   document.getElementById('kpi-receita').textContent = fmtNum(r.receitaTotal);
   document.getElementById('kpi-despesa').textContent = fmtNum(r.despesaTotalGeral);
+  document.getElementById('kpi-despesa-sub').textContent = r.contasPendentes>0 ? `+ ${fmtNum(r.contasPendentes)} ainda pendente (não descontado)` : 'tudo que estava marcado já foi contabilizado';
   document.getElementById('kpi-saldo').textContent = fmtNum(r.saldo);
   document.getElementById('kpi-saldo').style.color = r.saldo>=0 ? 'var(--teal)' : 'var(--magenta)';
-  document.getElementById('kpi-saldo-sub').textContent = r.saldo>=0 ? 'saldo positivo neste mês' : 'atenção: saldo negativo neste mês';
+  document.getElementById('kpi-saldo-sub').textContent = (r.saldo>=0 ? 'saldo positivo até agora' : 'atenção: já negativo') + ` · projetado com pendências: ${fmtNum(r.saldoProjetado)}`;
   document.getElementById('kpi-poupanca').textContent = r.poupancaPercent.toFixed(1)+'%';
 
   document.getElementById('contas-pct').textContent = r.pctPago.toFixed(0)+'%';
