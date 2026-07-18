@@ -353,6 +353,14 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
 }
 .loading-full .brand-dot{width:14px;height:14px;}
 .loading-full span{color:var(--muted);font-size:13px;font-family:var(--font-mono);}
+.update-banner{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  background:linear-gradient(90deg,var(--teal),var(--blue));
+  color:#04140f;font-weight:700;font-size:12.5px;text-align:center;
+  padding:10px;transform:translateY(-100%);transition:transform .4s ease;
+  font-family:var(--font-mono);letter-spacing:.02em;
+}
+.update-banner.mostrar{transform:translateY(0);}
 </style>
 </head>
 <body>
@@ -378,6 +386,8 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
     <div class="login-status" id="login-status">conectando ao banco de dados…</div>
   </div>
 </div>
+
+<div class="update-banner" id="update-banner">🔄 Nova versão do painel disponível — atualizando...</div>
 
 <div class="loading-full" id="loading-full" style="display:none;">
   <div class="brand-dot"></div>
@@ -995,6 +1005,32 @@ document.addEventListener('keydown', (e)=>{
     el.blur();
   }
 });
+
+/* ============ VERIFICADOR DE ATUALIZAÇÃO ============ */
+// Mesmo mecanismo dos painéis de TV (Juanil/Vivendas): guarda um hash do arquivo publicado
+// e verifica de tempos em tempos se mudou no GitHub Pages, recarregando sozinho quando detecta.
+let hashArquivoAtual = null;
+function calcularHash(texto){
+  let h = 5381;
+  for(let i=0;i<texto.length;i++){ h = ((h*33) ^ texto.charCodeAt(i)) >>> 0; }
+  return h.toString(16);
+}
+async function verificarAtualizacaoArquivo(){
+  try{
+    const url = window.location.origin + window.location.pathname + '?_=' + Date.now();
+    const resp = await fetch(url, { cache:'no-store' });
+    if(!resp.ok) return;
+    const texto = await resp.text();
+    const hash = calcularHash(texto);
+    if(hashArquivoAtual === null){ hashArquivoAtual = hash; return; }
+    if(hash !== hashArquivoAtual){
+      document.getElementById('update-banner').classList.add('mostrar');
+      setTimeout(()=> window.location.reload(), 2500);
+    }
+  }catch(err){ console.error('Falha ao verificar atualização do painel', err); }
+}
+verificarAtualizacaoArquivo();
+setInterval(verificarAtualizacaoArquivo, 5*60*1000);
 
 /* ============ RELÓGIO ============ */
 function atualizarRelogio(){
