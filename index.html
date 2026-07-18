@@ -29,6 +29,8 @@
   --violet-dim:#241c47;
   --blue:#3ea6ff;
   --blue-dim:#0e2748;
+  --coral:#ff6b4a;
+  --coral-dim:#3a1a10;
   --font-display:'Orbitron',sans-serif;
   --font-body:'Sora',sans-serif;
   --font-mono:'JetBrains Mono',monospace;
@@ -308,6 +310,24 @@ input[type=range]{flex:1;accent-color:var(--accent,var(--teal));}
 input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent,var(--teal));cursor:pointer;}
 input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
 .check-line{display:flex;align-items:center;gap:9px;margin-top:12px;font-size:12.5px;color:var(--muted);cursor:pointer;}
+tr.linha-duplicada{background:#b3122e;}
+tr.linha-duplicada td{background:#b3122e;}
+tr.linha-duplicada input:not([type=checkbox]){background:#8f0e25;color:#ffe066;border-color:#ff6b6b;}
+tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
+.btn-confirmar-dup{
+  background:#ffe066;border:1px solid #ffe066;color:#3a1000;
+  width:28px;height:28px;border-radius:7px;font-size:13px;line-height:1;font-weight:700;
+  display:inline-flex;align-items:center;justify-content:center;margin-right:4px;
+  flex-shrink:0;
+}
+.btn-confirmar-dup:hover{background:#fff2a8;}
+.col-acao-dup{display:flex;align-items:center;justify-content:center;gap:2px;}
+.mover-select{
+  width:34px !important;padding:0 !important;text-align:center;
+  background:var(--panel) !important;border:1px solid var(--line) !important;color:var(--muted) !important;
+  border-radius:7px;height:28px;font-size:12px !important;cursor:pointer;flex-shrink:0;
+}
+.mover-select:hover{border-color:var(--accent,var(--teal)) !important;color:var(--accent,var(--teal)) !important;}
 .slider-val{font-family:var(--font-mono);font-weight:700;min-width:52px;text-align:right;color:var(--accent,var(--teal));}
 
 .radio-group{display:flex;gap:10px;}
@@ -379,6 +399,7 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
       <button class="tab-btn ativo" data-tab="visao" style="--tab-color:var(--blue)">◆ Visão Geral</button>
       <button class="tab-btn" data-tab="receitas" style="--tab-color:var(--teal)">▲ Receitas</button>
       <button class="tab-btn" data-tab="despesas" style="--tab-color:var(--magenta)">▼ Despesas da Casa</button>
+      <button class="tab-btn" data-tab="mercado" style="--tab-color:var(--coral)">🛒 Mercado &amp; Dia a Dia</button>
       <button class="tab-btn" data-tab="financiamento" style="--tab-color:var(--blue)">◈ Financiamento &amp; Condomínio</button>
       <button class="tab-btn" data-tab="carro" style="--tab-color:var(--amber)">◉ Carro</button>
       <button class="tab-btn" data-tab="acordos" style="--tab-color:var(--magenta)">≡ Acordos</button>
@@ -487,7 +508,7 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
     <section class="painel" id="painel-despesas">
       <div class="card" style="--accent:var(--magenta)">
         <div class="card-head">
-          <div class="card-title">Despesas rotineiras da casa <span>luz, água, gás, mercado e afins</span></div>
+          <div class="card-title">Despesas rotineiras da casa <span>luz, água, gás, internet e afins</span></div>
           <div class="card-total" id="total-despesas" style="color:var(--magenta)">R$ 0,00</div>
         </div>
         <table class="tabela">
@@ -496,6 +517,22 @@ input[type=checkbox]:disabled{opacity:.4;cursor:not-allowed;}
         </table>
         <div class="hint" id="sub-despesas"></div>
         <button class="btn-add" id="add-despesa" style="--accent:var(--magenta)">+ Adicionar categoria</button>
+      </div>
+    </section>
+
+    <!-- ================= MERCADO & DIA A DIA ================= -->
+    <section class="painel" id="painel-mercado">
+      <div class="card" style="--accent:var(--coral)">
+        <div class="card-head">
+          <div class="card-title">Mercado, lanches &amp; gastos do dia a dia <span>compras variadas lançadas durante o mês</span></div>
+          <div class="card-total" id="total-mercado" style="color:var(--coral)">R$ 0,00</div>
+        </div>
+        <table class="tabela">
+          <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
+          <tbody id="tbody-mercado"></tbody>
+        </table>
+        <div class="hint" id="sub-mercado"></div>
+        <button class="btn-add" id="add-mercado" style="--accent:var(--coral)">+ Adicionar gasto</button>
       </div>
     </section>
 
@@ -753,9 +790,9 @@ function defaultMonthData(){
       { id: uid(), categoria:'💧 Água', valor:0, pago:false, data:'' },
       { id: uid(), categoria:'🔥 Gás', valor:0, pago:false, data:'' },
       { id: uid(), categoria:'🌐 Internet', valor:0, pago:false, data:'' },
-      { id: uid(), categoria:'🔧 Manutenção', valor:0, pago:false, data:'' },
-      { id: uid(), categoria:'🛒 Mercado / Compras', valor:0, pago:false, data:'' }
+      { id: uid(), categoria:'🔧 Manutenção', valor:0, pago:false, data:'' }
     ],
+    mercado: [],
     financiamento: { descricao:'Financiamento da casa própria', parcela:0, saldoDevedor:0, parcelasRestantes:0, parcelasTotais:0, pago:false, data:'' },
     condominio: { valor:0, pago:false, data:'' },
     carro: { combustivel: [], manutencaoItens: [], seguro:0, outros:0, custosPagos:false, segurosOutrosData:'' },
@@ -894,9 +931,19 @@ function getMonthData(){
     m.carro.manutencaoItens = [];
     const antigo = parseFloat(m.carro.manutencao)||0;
     if(antigo > 0){
-      m.carro.manutencaoItens.push({ id: uid(), descricao:'Manutenção (lançamento anterior)', valor: antigo, pago: !!m.carro.custosPagos });
+      m.carro.manutencaoItens.push({ id: uid(), descricao:'Manutenção (lançamento anterior)', valor: antigo, pago: !!m.carro.custosPagos, data:'', confirmado:false });
     }
     delete m.carro.manutencao;
+  }
+  if(!m.mercado){
+    m.mercado = [];
+    const linhaMercado = m.despesasCasa.find(d=> d.categoria && d.categoria.includes('Mercado'));
+    if(linhaMercado){
+      m.despesasCasa = m.despesasCasa.filter(d=>d.id!==linhaMercado.id);
+      if((parseFloat(linhaMercado.valor)||0) > 0){
+        m.mercado.push({ id: uid(), descricao:'Mercado / Compras (lançamento anterior)', valor: parseFloat(linhaMercado.valor)||0, pago: !!linhaMercado.pago, data: linhaMercado.data||'', confirmado:false });
+      }
+    }
   }
   return m;
 }
@@ -963,6 +1010,23 @@ document.getElementById('mes-proximo').addEventListener('click', ()=> deslocarMe
 
 /* ============ CÁLCULOS ============ */
 function somaArr(arr, campo){ return arr.reduce((s,i)=> s + (parseFloat(i[campo])||0), 0); }
+// Detecta itens com valor repetido dentro da mesma lista (ignorando data), exceto os já confirmados como legítimos
+function idsRepetidos(lista, campoValor){
+  const contagem = {};
+  lista.forEach(it=>{
+    if(it.confirmado) return;
+    const v = (parseFloat(it[campoValor])||0).toFixed(2);
+    if(v === '0.00') return;
+    contagem[v] = (contagem[v]||0) + 1;
+  });
+  const repetidos = new Set();
+  lista.forEach(it=>{
+    if(it.confirmado) return;
+    const v = (parseFloat(it[campoValor])||0).toFixed(2);
+    if(v !== '0.00' && contagem[v] > 1) repetidos.add(it.id);
+  });
+  return repetidos;
+}
 
 function acordoQuitado(a){
   const totais = parseInt(a.parcelasTotais)||0, pagas = parseInt(a.parcelasPagas)||0;
@@ -971,6 +1035,7 @@ function acordoQuitado(a){
 function resumoMes(m){
   const receitaTotal = somaArr(m.receitas, 'valor');
   const despesaCasaTotal = somaArr(m.despesasCasa, 'valor');
+  const mercadoTotal = somaArr(m.mercado, 'valor');
   const financiamentoValor = parseFloat(m.financiamento.parcela)||0;
   const condominioValor = parseFloat(m.condominio.valor)||0;
   const combustivelTotal = somaArr(m.carro.combustivel, 'valor');
@@ -985,7 +1050,7 @@ function resumoMes(m){
   const investSaldoTotal = somaArr(m.investimentos, 'valorAtual');
   const reservaAporte = parseFloat(m.reservaFerias.aporteMes)||0;
 
-  const despesaFixaTotal = despesaCasaTotal + financiamentoValor + condominioValor + carroTotal + acordosTotal;
+  const despesaFixaTotal = despesaCasaTotal + mercadoTotal + financiamentoValor + condominioValor + carroTotal + acordosTotal;
   const saldoAntesMesada = receitaTotal - despesaFixaTotal - investAporteTotal - reservaAporte;
 
   let mesadaSugerida = 0;
@@ -1002,12 +1067,13 @@ function resumoMes(m){
 
   // Contas pagas x pendentes do mês
   const despesaCasaPaga = somaArr(m.despesasCasa.filter(d=>d.pago), 'valor');
+  const mercadoPago = somaArr(m.mercado.filter(d=>d.pago), 'valor');
   const financiamentoPago = m.financiamento.pago ? financiamentoValor : 0;
   const condominioPago = m.condominio.pago ? condominioValor : 0;
   const carroFixoPago = manutencaoPaga + (m.carro.custosPagos ? seguroOutrosTotal : 0);
   const acordosPagoMes = somaArr(acordosAtivos.filter(a=>a.pagoMes), 'parcela');
   const contasTotal = despesaFixaTotal;
-  const contasPagas = despesaCasaPaga + financiamentoPago + condominioPago + combustivelTotal + carroFixoPago + acordosPagoMes;
+  const contasPagas = despesaCasaPaga + mercadoPago + financiamentoPago + condominioPago + combustivelTotal + carroFixoPago + acordosPagoMes;
   const contasPendentes = Math.max(0, contasTotal - contasPagas);
   const pctPago = contasTotal>0 ? clamp((contasPagas/contasTotal)*100,0,100) : 100;
 
@@ -1017,11 +1083,11 @@ function resumoMes(m){
   score = Math.round(clamp(score, 0, 100));
 
   return {
-    receitaTotal, despesaCasaTotal, financiamentoValor, condominioValor,
+    receitaTotal, despesaCasaTotal, mercadoTotal, financiamentoValor, condominioValor,
     combustivelTotal, carroFixoTotal, carroTotal, acordosTotal, investAporteTotal, investSaldoTotal,
     reservaAporte, despesaFixaTotal, saldoAntesMesada, mesadaSugerida, mesadaEfetiva,
     saldo, despesaTotalGeral, poupancaPercent, score,
-    despesaCasaPaga, financiamentoPago, condominioPago, carroFixoPago, acordosPagoMes,
+    despesaCasaPaga, mercadoPago, financiamentoPago, condominioPago, carroFixoPago, acordosPagoMes,
     contasTotal, contasPagas, contasPendentes, pctPago
   };
 }
@@ -1115,14 +1181,17 @@ function renderDespesas(){
   const m = getMonthData();
   const tbody = document.getElementById('tbody-despesas');
   tbody.innerHTML = '';
+  const repetidos = idsRepetidos(m.despesasCasa, 'valor');
   m.despesasCasa.forEach(d=>{
     const tr = document.createElement('tr');
+    const dup = repetidos.has(d.id);
+    if(dup) tr.className = 'linha-duplicada';
     tr.innerHTML = `
       <td><input type="text" data-id="${d.id}" data-campo="categoria" class="in-despesa" value="${escAttr(d.categoria)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${formatBRLInput(d.valor)}"></td>
       <td><input type="date" data-id="${d.id}" data-campo="data" class="in-despesa" value="${d.data||''}"></td>
       <td style="text-align:center;"><input type="checkbox" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></td>
-      <td class="col-acao"><button class="btn-del" data-del="${d.id}">✕</button></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select><button class="btn-del" data-del="${d.id}">✕</button></div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalDespesas();
@@ -1135,11 +1204,16 @@ function atualizarTotalDespesas(){
   document.getElementById('sub-despesas').textContent = `pago: ${fmtNum(paga)} · pendente: ${fmtNum(total-paga)}`;
 }
 document.getElementById('tbody-despesas').addEventListener('change', (e)=>{
+  const sel = e.target.closest('.mover-select'); if(!sel || !sel.value) return;
+  moverItem(sel.dataset.moverOrigem, sel.dataset.moverId, sel.value);
+});
+document.getElementById('tbody-despesas').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-despesa'); if(!el) return;
   const m = getMonthData();
   const row = m.despesasCasa.find(d=>d.id===el.dataset.id); if(!row) return;
+  if(el.dataset.campo==='valor') row.confirmado = false;
   row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
-  atualizarTotalDespesas();
+  renderDespesas();
   salvarMesDebounced(currentMonth);
   agendarVisaoGeral();
 });
@@ -1152,14 +1226,120 @@ document.getElementById('tbody-despesas').addEventListener('change', (e)=>{
   marcarAlterado();
 });
 document.getElementById('tbody-despesas').addEventListener('click', (e)=>{
-  const del = e.target.closest('[data-del]'); if(!del) return;
-  const m = getMonthData();
-  m.despesasCasa = m.despesasCasa.filter(d=>d.id!==del.dataset.del);
-  marcarAlterado();
+  const del = e.target.closest('[data-del]');
+  if(del){
+    const m = getMonthData();
+    m.despesasCasa = m.despesasCasa.filter(d=>d.id!==del.dataset.del);
+    marcarAlterado();
+    return;
+  }
+  const conf = e.target.closest('[data-confirmar]');
+  if(conf){
+    const m = getMonthData();
+    const row = m.despesasCasa.find(d=>d.id===conf.dataset.confirmar); if(!row) return;
+    row.confirmado = true;
+    marcarAlterado();
+  }
 });
 document.getElementById('add-despesa').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false, data:'' });
+  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false, data:'', confirmado:false });
+  marcarAlterado();
+});
+
+/* ============ MOVER ITEM ENTRE LISTAS ============ */
+const LISTAS_MOVIVEIS = {
+  despesas: { label:'Casa', campoDesc:'categoria', getArr:(m)=>m.despesasCasa, setArr:(m,arr)=>{ m.despesasCasa = arr; }, render:()=>renderDespesas() },
+  mercado: { label:'Mercado', campoDesc:'descricao', getArr:(m)=>m.mercado, setArr:(m,arr)=>{ m.mercado = arr; }, render:()=>renderMercado() },
+  manutencao: { label:'Carro', campoDesc:'descricao', getArr:(m)=>m.carro.manutencaoItens, setArr:(m,arr)=>{ m.carro.manutencaoItens = arr; }, render:()=>renderCarro() }
+};
+function opcoesMover(origemKey){
+  return Object.keys(LISTAS_MOVIVEIS).filter(k=>k!==origemKey).map(k=>`<option value="${k}">${LISTAS_MOVIVEIS[k].label}</option>`).join('');
+}
+function moverItem(origemKey, itemId, destinoKey){
+  if(origemKey===destinoKey || !LISTAS_MOVIVEIS[destinoKey]) return;
+  const m = getMonthData();
+  const origem = LISTAS_MOVIVEIS[origemKey];
+  const destino = LISTAS_MOVIVEIS[destinoKey];
+  const arrOrigem = origem.getArr(m);
+  const item = arrOrigem.find(i=>i.id===itemId);
+  if(!item) return;
+  origem.setArr(m, arrOrigem.filter(i=>i.id!==itemId));
+  const textoDescricao = item[origem.campoDesc] || item.descricao || item.categoria || '';
+  const novoItem = { id: uid(), valor: parseFloat(item.valor)||0, pago: !!item.pago, data: item.data||'', confirmado:false };
+  novoItem[destino.campoDesc] = textoDescricao;
+  destino.setArr(m, [...destino.getArr(m), novoItem]);
+  toast(`Movido para ${destino.label}`);
+  marcarAlterado();
+}
+
+/* ============ RENDER: MERCADO & DIA A DIA ============ */
+function renderMercado(){
+  const m = getMonthData();
+  const tbody = document.getElementById('tbody-mercado');
+  tbody.innerHTML = '';
+  const repetidos = idsRepetidos(m.mercado, 'valor');
+  m.mercado.forEach(it=>{
+    const tr = document.createElement('tr');
+    const dup = repetidos.has(it.id);
+    if(dup) tr.className = 'linha-duplicada';
+    tr.innerHTML = `
+      <td><input type="text" data-id="${it.id}" data-campo="descricao" class="in-mercado" value="${escAttr(it.descricao)}"></td>
+      <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-mercado" value="${formatBRLInput(it.valor||0)}"></td>
+      <td><input type="date" data-id="${it.id}" data-campo="data" class="in-mercado" value="${it.data||''}"></td>
+      <td style="text-align:center;"><input type="checkbox" class="chk-mercado" data-id="${it.id}" ${it.pago?'checked':''}></td>
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select><button class="btn-del" data-del="${it.id}">✕</button></div></td>`;
+    tbody.appendChild(tr);
+  });
+  atualizarTotalMercado();
+}
+function atualizarTotalMercado(){
+  const m = getMonthData();
+  const total = somaArr(m.mercado,'valor');
+  const paga = somaArr(m.mercado.filter(d=>d.pago),'valor');
+  document.getElementById('total-mercado').textContent = fmtNum(total);
+  document.getElementById('sub-mercado').textContent = `pago: ${fmtNum(paga)} · pendente: ${fmtNum(total-paga)}`;
+}
+document.getElementById('tbody-mercado').addEventListener('change', (e)=>{
+  const sel = e.target.closest('.mover-select');
+  if(sel && sel.value){ moverItem(sel.dataset.moverOrigem, sel.dataset.moverId, sel.value); return; }
+  const chk = e.target.closest('.chk-mercado');
+  if(chk){
+    const m = getMonthData();
+    const row = m.mercado.find(d=>d.id===chk.dataset.id); if(!row) return;
+    row.pago = chk.checked;
+    atualizarTotalMercado();
+    marcarAlterado();
+    return;
+  }
+  const el = e.target.closest('.in-mercado'); if(!el) return;
+  const m = getMonthData();
+  const row = m.mercado.find(d=>d.id===el.dataset.id); if(!row) return;
+  if(el.dataset.campo==='valor') row.confirmado = false;
+  row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
+  renderMercado();
+  salvarMesDebounced(currentMonth);
+  agendarVisaoGeral();
+});
+document.getElementById('tbody-mercado').addEventListener('click', (e)=>{
+  const del = e.target.closest('[data-del]');
+  if(del){
+    const m = getMonthData();
+    m.mercado = m.mercado.filter(d=>d.id!==del.dataset.del);
+    marcarAlterado();
+    return;
+  }
+  const conf = e.target.closest('[data-confirmar]');
+  if(conf){
+    const m = getMonthData();
+    const row = m.mercado.find(d=>d.id===conf.dataset.confirmar); if(!row) return;
+    row.confirmado = true;
+    marcarAlterado();
+  }
+});
+document.getElementById('add-mercado').addEventListener('click', ()=>{
+  const m = getMonthData();
+  m.mercado.push({ id: uid(), descricao:'Novo gasto', valor:0, pago:false, data:'', confirmado:false });
   marcarAlterado();
 });
 
@@ -1239,14 +1419,17 @@ function renderCarro(){
 
   const tbodyM = document.getElementById('tbody-manutencao');
   tbodyM.innerHTML = '';
+  const repetidosM = idsRepetidos(m.carro.manutencaoItens, 'valor');
   m.carro.manutencaoItens.forEach(it=>{
     const tr = document.createElement('tr');
+    const dup = repetidosM.has(it.id);
+    if(dup) tr.className = 'linha-duplicada';
     tr.innerHTML = `
       <td><input type="text" data-id="${it.id}" data-campo="descricao" class="in-manutencao" value="${escAttr(it.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-manutencao" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-manutencao" value="${it.data||''}"></td>
       <td style="text-align:center;"><input type="checkbox" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></td>
-      <td class="col-acao"><button class="btn-del" data-del="${it.id}">✕</button></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select><button class="btn-del" data-del="${it.id}">✕</button></div></td>`;
     tbodyM.appendChild(tr);
   });
 
@@ -1280,11 +1463,16 @@ function renderCarroDerivados(){
   document.getElementById('sub-manutencao').textContent = `pago: ${fmtNum(manutencaoPaga)} · pendente: ${fmtNum(manutencaoTotal-manutencaoPaga)}`;
 }
 document.getElementById('tbody-manutencao').addEventListener('change', (e)=>{
+  const sel = e.target.closest('.mover-select'); if(!sel || !sel.value) return;
+  moverItem(sel.dataset.moverOrigem, sel.dataset.moverId, sel.value);
+});
+document.getElementById('tbody-manutencao').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-manutencao'); if(!el) return;
   const m = getMonthData();
   const row = m.carro.manutencaoItens.find(i=>i.id===el.dataset.id); if(!row) return;
+  if(el.dataset.campo==='valor') row.confirmado = false;
   row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
-  renderCarroDerivados();
+  renderCarro();
   salvarMesDebounced(currentMonth);
   agendarVisaoGeral();
 });
@@ -1297,14 +1485,24 @@ document.getElementById('tbody-manutencao').addEventListener('change', (e)=>{
   marcarAlterado();
 });
 document.getElementById('tbody-manutencao').addEventListener('click', (e)=>{
-  const del = e.target.closest('[data-del]'); if(!del) return;
-  const m = getMonthData();
-  m.carro.manutencaoItens = m.carro.manutencaoItens.filter(i=>i.id!==del.dataset.del);
-  marcarAlterado();
+  const del = e.target.closest('[data-del]');
+  if(del){
+    const m = getMonthData();
+    m.carro.manutencaoItens = m.carro.manutencaoItens.filter(i=>i.id!==del.dataset.del);
+    marcarAlterado();
+    return;
+  }
+  const conf = e.target.closest('[data-confirmar]');
+  if(conf){
+    const m = getMonthData();
+    const row = m.carro.manutencaoItens.find(i=>i.id===conf.dataset.confirmar); if(!row) return;
+    row.confirmado = true;
+    marcarAlterado();
+  }
 });
 document.getElementById('add-manutencao').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false, data:'' });
+  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false, data:'', confirmado:false });
   marcarAlterado();
 });
 document.getElementById('tbody-combustivel').addEventListener('change', (e)=>{
@@ -1358,13 +1556,16 @@ function renderAcordos(){
   const m = getMonthData();
   const tbody = document.getElementById('tbody-acordos');
   tbody.innerHTML = '';
+  const repetidos = idsRepetidos(m.acordos, 'parcela');
   m.acordos.forEach(a=>{
     const totais = parseInt(a.parcelasTotais)||0;
     const pagas = clamp(parseInt(a.parcelasPagas)||0, 0, totais||9999);
     const quitado = totais>0 && pagas>=totais;
     const pagoMes = !!a.pagoMes;
+    const dup = repetidos.has(a.id);
     const tr = document.createElement('tr');
     tr.dataset.rowId = a.id;
+    if(dup) tr.className = 'linha-duplicada';
     tr.innerHTML = `
       <td><input type="text" data-id="${a.id}" data-campo="descricao" class="in-acordo" value="${escAttr(a.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${a.id}" data-campo="parcela" class="in-acordo" value="${formatBRLInput(a.parcela||0)}"></td>
@@ -1373,7 +1574,7 @@ function renderAcordos(){
       <td><input type="date" data-id="${a.id}" data-campo="data" class="in-acordo" value="${a.data||''}"></td>
       <td style="text-align:center;"><input type="checkbox" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></td>
       <td><span class="badge ${quitado||pagoMes?'teal':'magenta'}" data-badge="${a.id}">${quitado ? 'Quitado' : (pagoMes ? 'Pago este mês' : (totais>0 ? (totais-pagas)+' restantes' : 'em aberto'))}</span></td>
-      <td class="col-acao"><button class="btn-del" data-del="${a.id}">✕</button></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${a.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<button class="btn-del" data-del="${a.id}">✕</button></div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalAcordos();
@@ -1388,6 +1589,7 @@ document.getElementById('tbody-acordos').addEventListener('change', (e)=>{
   const m = getMonthData();
   const row = m.acordos.find(a=>a.id===el.dataset.id); if(!row) return;
   const campo = el.dataset.campo;
+  if(campo==='parcela') row.confirmado = false;
   row[campo] = (campo==='descricao' || campo==='data') ? el.value : (campo==='parcela' ? parseBRL(el.value) : (parseInt(el.value)||0));
   renderAcordos();
   salvarMesDebounced(currentMonth);
@@ -1402,14 +1604,24 @@ document.getElementById('tbody-acordos').addEventListener('change', (e)=>{
   marcarAlterado();
 });
 document.getElementById('tbody-acordos').addEventListener('click', (e)=>{
-  const del = e.target.closest('[data-del]'); if(!del) return;
-  const m = getMonthData();
-  m.acordos = m.acordos.filter(a=>a.id!==del.dataset.del);
-  marcarAlterado();
+  const del = e.target.closest('[data-del]');
+  if(del){
+    const m = getMonthData();
+    m.acordos = m.acordos.filter(a=>a.id!==del.dataset.del);
+    marcarAlterado();
+    return;
+  }
+  const conf = e.target.closest('[data-confirmar]');
+  if(conf){
+    const m = getMonthData();
+    const row = m.acordos.find(a=>a.id===conf.dataset.confirmar); if(!row) return;
+    row.confirmado = true;
+    marcarAlterado();
+  }
 });
 document.getElementById('add-acordo').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data:'' });
+  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data:'', confirmado:false });
   marcarAlterado();
 });
 
@@ -1612,12 +1824,12 @@ function renderChartCategorias(){
   if(!ctx) return;
   const m = getMonthData();
   const r = resumoMes(m);
-  const labels = ['Despesas casa','Financiamento','Condomínio','Carro','Acordos','Mesada'];
-  const valores = [r.despesaCasaTotal, r.financiamentoValor, r.condominioValor, r.carroTotal, r.acordosTotal, r.mesadaEfetiva];
+  const labels = ['Despesas casa','Mercado & dia a dia','Financiamento','Condomínio','Carro','Acordos','Mesada'];
+  const valores = [r.despesaCasaTotal, r.mercadoTotal, r.financiamentoValor, r.condominioValor, r.carroTotal, r.acordosTotal, r.mesadaEfetiva];
   destruirChart('categorias');
   chartRefs['categorias'] = new Chart(ctx, {
     type:'doughnut',
-    data:{ labels, datasets:[{ data: valores, backgroundColor:['#ff3e7f','#3ea6ff','#3ea6ff99','#ffb020','#ff3e7f99','#00f0c0'], borderColor:'#0e1630', borderWidth:2 }] },
+    data:{ labels, datasets:[{ data: valores, backgroundColor:['#ff3e7f','#ff6b4a','#3ea6ff','#3ea6ff99','#ffb020','#ff3e7f99','#00f0c0'], borderColor:'#0e1630', borderWidth:2 }] },
     options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
       plugins:{ legend:{ position:'bottom', labels:{ color:tickColor, boxWidth:10, font:{family:fontBody, size:10.5} } },
         tooltip:{ callbacks:{ label:(c)=> `${c.label}: ${fmtNum(c.parsed)}` } } } }
@@ -1759,7 +1971,7 @@ function agendarVisaoGeral(){
 
 /* ============ RENDER TUDO ============ */
 function renderTudo(){
-  const passos = [renderReceitas, renderDespesas, renderFinanciamento, renderCarro, renderAcordos, renderReservasInvestimentos, renderMesada, renderVisaoGeral];
+  const passos = [renderReceitas, renderDespesas, renderMercado, renderFinanciamento, renderCarro, renderAcordos, renderReservasInvestimentos, renderMesada, renderVisaoGeral];
   passos.forEach(fn => {
     try { fn(); } catch(err) { console.error('Erro ao renderizar', fn.name, err); }
   });
