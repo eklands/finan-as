@@ -412,7 +412,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
     <div class="topbar-inner">
       <div class="brand">
         <div class="brand-dot"></div>
-        <div class="brand-text">FINANÇAS.FAMÍLIA<small id="sync-label">● sincronizado em tempo real</small></div>
+        <div class="brand-text">FINANÇAS.FAMÍLIA<small id="sync-label">● sincronizado em tempo real</small><small id="update-check-label" style="display:block;opacity:.6;"></small></div>
       </div>
       <div class="topbar-right">
         <span class="clock" id="clock"></span>
@@ -940,7 +940,7 @@ function iniciarSincronizacao(){
 
   unsubMeses = onSnapshot(collection(db, 'meses'), (snap) => {
     const novo = {};
-    snap.forEach(d => { novo[d.id] = d.data(); });
+    snap.forEach(d => { novo[d.id] = normalizarMes(d.data()); });
     // não deixa uma atualização vinda do banco apagar uma edição local que ainda não terminou de salvar
     pendingLocal.forEach(key => { if(allMonths[key]) novo[key] = allMonths[key]; });
     allMonths = novo;
@@ -996,10 +996,19 @@ function salvarConfigDebounced(){
   }, 600);
 }
 
-function getMonthData(){
-  if(!allMonths[currentMonth]) allMonths[currentMonth] = defaultMonthData();
-  const m = allMonths[currentMonth];
+// Garante que um mês (vindo do banco ou novo) tenha todos os campos que versões mais recentes do painel esperam.
+// Roda em TODOS os meses (não só o selecionado), pra gráficos de histórico não quebrarem em meses antigos.
+function normalizarMes(m){
+  if(!m.receitas) m.receitas = [];
+  if(!m.despesasCasa) m.despesasCasa = [];
+  if(!m.acordos) m.acordos = [];
+  if(!m.investimentos) m.investimentos = [];
+  if(!m.reservaFerias) m.reservaFerias = { meta:0, valorAtual:0, aporteMes:0 };
+  if(!m.mesada) m.mesada = { valorManual:0 };
+  if(!m.financiamento) m.financiamento = { descricao:'', parcela:0, saldoDevedor:0, parcelasRestantes:0, parcelasTotais:0, pago:false, data:'' };
+  if(!m.condominio) m.condominio = { valor:0, pago:false, data:'' };
   if(!m.carro) m.carro = { combustivel: [], manutencaoItens: [], seguro:0, outros:0, custosPagos:false, segurosOutrosData:'' };
+  if(!m.carro.combustivel) m.carro.combustivel = [];
   if(!m.carro.manutencaoItens){
     m.carro.manutencaoItens = [];
     const antigo = parseFloat(m.carro.manutencao)||0;
@@ -1019,6 +1028,10 @@ function getMonthData(){
     }
   }
   return m;
+}
+function getMonthData(){
+  if(!allMonths[currentMonth]) allMonths[currentMonth] = defaultMonthData();
+  return normalizarMes(allMonths[currentMonth]);
 }
 function marcarAlterado(){
   salvarMesDebounced(currentMonth);
@@ -1131,18 +1144,29 @@ function calcularHash(texto){
   return h.toString(16);
 }
 async function verificarAtualizacaoArquivo(){
+  const rotulo = document.getElementById('update-check-label');
   try{
     const url = window.location.origin + window.location.pathname + '?_=' + Date.now();
     const resp = await fetch(url, { cache:'no-store' });
-    if(!resp.ok) return;
+    if(!resp.ok) throw new Error('resposta '+resp.status);
     const texto = await resp.text();
     const hash = calcularHash(texto);
-    if(hashArquivoAtual === null){ hashArquivoAtual = hash; return; }
+    const agora = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    if(hashArquivoAtual === null){
+      hashArquivoAtual = hash;
+      if(rotulo) rotulo.textContent = `verificador ativo · última checagem ${agora}`;
+      return;
+    }
     if(hash !== hashArquivoAtual){
       document.getElementById('update-banner').classList.add('mostrar');
       setTimeout(()=> window.location.reload(), 2500);
+      return;
     }
-  }catch(err){ console.error('Falha ao verificar atualização do painel', err); }
+    if(rotulo) rotulo.textContent = `verificador ativo · última checagem ${agora}`;
+  }catch(err){
+    console.error('Falha ao verificar atualização do painel', err);
+    if(rotulo) rotulo.textContent = 'verificador de atualização indisponível no momento';
+  }
 }
 verificarAtualizacaoArquivo();
 setInterval(verificarAtualizacaoArquivo, 5*60*1000);
