@@ -877,13 +877,13 @@ function salvarMes(key, data){
 function salvarMesDebounced(key){
   pendingLocal.add(key);
   clearTimeout(saveTimers[key]);
-  saveTimers[key] = setTimeout(()=> salvarMes(key, allMonths[key]), 1800);
+  saveTimers[key] = setTimeout(()=> salvarMes(key, allMonths[key]), 600);
 }
 function salvarConfigDebounced(){
   clearTimeout(saveTimers['__config']);
   saveTimers['__config'] = setTimeout(()=>{
     setDoc(doc(db,'config','geral'), config).then(()=>toast('Sincronizado')).catch(console.error);
-  }, 1800);
+  }, 600);
 }
 
 function getMonthData(){
@@ -904,6 +904,17 @@ function marcarAlterado(){
   salvarMesDebounced(currentMonth);
   renderTudo();
 }
+
+/* ============ CONFIRMAR CAMPO COM ENTER ============ */
+// Enter confirma o valor do campo (dispara o mesmo evento de "sair do campo"), sem precisar clicar em outro lugar
+document.addEventListener('keydown', (e)=>{
+  if(e.key !== 'Enter') return;
+  const el = e.target;
+  if(el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'number' || el.type === 'date')){
+    e.preventDefault();
+    el.blur();
+  }
+});
 
 /* ============ RELÓGIO ============ */
 function atualizarRelogio(){
@@ -1078,7 +1089,7 @@ function renderReceitas(){
   });
   document.getElementById('total-receitas').textContent = fmtNum(somaArr(m.receitas,'valor'));
 }
-document.getElementById('tbody-receitas').addEventListener('input', (e)=>{
+document.getElementById('tbody-receitas').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-receita'); if(!el) return;
   const m = getMonthData();
   const row = m.receitas.find(r=>r.id===el.dataset.id); if(!row) return;
@@ -1123,7 +1134,7 @@ function atualizarTotalDespesas(){
   document.getElementById('total-despesas').textContent = fmtNum(total);
   document.getElementById('sub-despesas').textContent = `pago: ${fmtNum(paga)} · pendente: ${fmtNum(total-paga)}`;
 }
-document.getElementById('tbody-despesas').addEventListener('input', (e)=>{
+document.getElementById('tbody-despesas').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-despesa'); if(!el) return;
   const m = getMonthData();
   const row = m.despesasCasa.find(d=>d.id===el.dataset.id); if(!row) return;
@@ -1179,7 +1190,7 @@ function renderFinanciamentoDerivados(){
     : 'Informe o total de parcelas para acompanhar o progresso do financiamento.';
 }
 ['fin-descricao','fin-parcela','fin-saldo','fin-total','fin-restantes'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', ()=>{
+  document.getElementById(id).addEventListener('change', ()=>{
     const m = getMonthData();
     m.financiamento.descricao = document.getElementById('fin-descricao').value;
     m.financiamento.parcela = parseBRL(document.getElementById('fin-parcela').value);
@@ -1196,12 +1207,12 @@ document.getElementById('fin-pago').addEventListener('change', (e)=>{
   m.financiamento.pago = e.target.checked;
   marcarAlterado();
 });
-document.getElementById('fin-data').addEventListener('input', (e)=>{
+document.getElementById('fin-data').addEventListener('change', (e)=>{
   const m = getMonthData();
   m.financiamento.data = e.target.value;
   salvarMesDebounced(currentMonth);
 });
-document.getElementById('cond-valor').addEventListener('input', ()=>{
+document.getElementById('cond-valor').addEventListener('change', ()=>{
   const m = getMonthData();
   m.condominio.valor = parseBRL(document.getElementById('cond-valor').value);
   salvarMesDebounced(currentMonth);
@@ -1212,7 +1223,7 @@ document.getElementById('cond-pago').addEventListener('change', (e)=>{
   m.condominio.pago = e.target.checked;
   marcarAlterado();
 });
-document.getElementById('cond-data').addEventListener('input', (e)=>{
+document.getElementById('cond-data').addEventListener('change', (e)=>{
   const m = getMonthData();
   m.condominio.data = e.target.value;
   salvarMesDebounced(currentMonth);
@@ -1268,7 +1279,7 @@ function renderCarroDerivados(){
   document.getElementById('total-manutencao').textContent = fmtNum(manutencaoTotal);
   document.getElementById('sub-manutencao').textContent = `pago: ${fmtNum(manutencaoPaga)} · pendente: ${fmtNum(manutencaoTotal-manutencaoPaga)}`;
 }
-document.getElementById('tbody-manutencao').addEventListener('input', (e)=>{
+document.getElementById('tbody-manutencao').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-manutencao'); if(!el) return;
   const m = getMonthData();
   const row = m.carro.manutencaoItens.find(i=>i.id===el.dataset.id); if(!row) return;
@@ -1296,7 +1307,7 @@ document.getElementById('add-manutencao').addEventListener('click', ()=>{
   m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false, data:'' });
   marcarAlterado();
 });
-document.getElementById('tbody-combustivel').addEventListener('input', (e)=>{
+document.getElementById('tbody-combustivel').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-combustivel'); if(!el) return;
   const m = getMonthData();
   const row = m.carro.combustivel.find(c=>c.id===el.dataset.id); if(!row) return;
@@ -1322,7 +1333,7 @@ document.getElementById('add-combustivel').addEventListener('click', ()=>{
   salvarMesDebounced(currentMonth);
 });
 ['carro-seguro','carro-outros'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', ()=>{
+  document.getElementById(id).addEventListener('change', ()=>{
     const m = getMonthData();
     m.carro.seguro = parseBRL(document.getElementById('carro-seguro').value);
     m.carro.outros = parseBRL(document.getElementById('carro-outros').value);
@@ -1336,7 +1347,7 @@ document.getElementById('carro-pago').addEventListener('change', (e)=>{
   m.carro.custosPagos = e.target.checked;
   marcarAlterado();
 });
-document.getElementById('carro-data').addEventListener('input', (e)=>{
+document.getElementById('carro-data').addEventListener('change', (e)=>{
   const m = getMonthData();
   m.carro.segurosOutrosData = e.target.value;
   salvarMesDebounced(currentMonth);
@@ -1372,17 +1383,15 @@ function atualizarTotalAcordos(){
   const acordosAtivos = m.acordos.filter(a=>!acordoQuitado(a));
   document.getElementById('total-acordos').textContent = fmtNum(somaArr(acordosAtivos,'parcela'));
 }
-document.getElementById('tbody-acordos').addEventListener('input', (e)=>{
+document.getElementById('tbody-acordos').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-acordo'); if(!el) return;
   const m = getMonthData();
   const row = m.acordos.find(a=>a.id===el.dataset.id); if(!row) return;
   const campo = el.dataset.campo;
   row[campo] = (campo==='descricao' || campo==='data') ? el.value : (campo==='parcela' ? parseBRL(el.value) : (parseInt(el.value)||0));
-  atualizarTotalAcordos();
+  renderAcordos();
   salvarMesDebounced(currentMonth);
   agendarVisaoGeral();
-  clearTimeout(saveTimers['__ui_acordos']);
-  saveTimers['__ui_acordos'] = setTimeout(renderAcordos, 900);
 });
 document.getElementById('tbody-acordos').addEventListener('change', (e)=>{
   const chk = e.target.closest('.chk-acordo'); if(!chk) return;
@@ -1449,7 +1458,7 @@ function renderReservasDerivados(){
   }
 }
 ['ferias-meta','ferias-atual','ferias-aporte'].forEach(id=>{
-  document.getElementById(id).addEventListener('input', ()=>{
+  document.getElementById(id).addEventListener('change', ()=>{
     const m = getMonthData();
     m.reservaFerias.meta = parseBRL(document.getElementById('ferias-meta').value);
     m.reservaFerias.valorAtual = parseBRL(document.getElementById('ferias-atual').value);
@@ -1471,7 +1480,7 @@ document.getElementById('invest-volat').addEventListener('input', (e)=>{
   renderChartProjecao();
   salvarConfigDebounced();
 });
-document.getElementById('tbody-investimentos').addEventListener('input', (e)=>{
+document.getElementById('tbody-investimentos').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-investimento'); if(!el) return;
   const m = getMonthData();
   const row = m.investimentos.find(i=>i.id===el.dataset.id); if(!row) return;
@@ -1527,7 +1536,7 @@ document.getElementById('mesada-percentual').addEventListener('input', (e)=>{
   agendarVisaoGeral();
   salvarConfigDebounced();
 });
-document.getElementById('mesada-manual').addEventListener('input', ()=>{
+document.getElementById('mesada-manual').addEventListener('change', ()=>{
   const m = getMonthData();
   m.mesada.valorManual = parseBRL(document.getElementById('mesada-manual').value);
   renderMesadaDerivados();
@@ -1745,7 +1754,7 @@ function renderVisaoGeralLeve(){
 let timerVisaoGeral = null;
 function agendarVisaoGeral(){
   clearTimeout(timerVisaoGeral);
-  timerVisaoGeral = setTimeout(renderVisaoGeralLeve, 700);
+  timerVisaoGeral = setTimeout(renderVisaoGeralLeve, 150);
 }
 
 /* ============ RENDER TUDO ============ */
