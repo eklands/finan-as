@@ -328,6 +328,16 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
   border-radius:7px;height:28px;font-size:12px !important;cursor:pointer;flex-shrink:0;
 }
 .mover-select:hover{border-color:var(--accent,var(--teal)) !important;color:var(--accent,var(--teal)) !important;}
+.avatar-pagador{
+  width:24px;height:24px;border-radius:50%;border:none;
+  font-size:11px;font-weight:800;color:#04140f;font-family:var(--font-display);
+  display:inline-flex;align-items:center;justify-content:center;
+  cursor:pointer;flex-shrink:0;transition:transform .12s, box-shadow .12s;
+}
+.avatar-pagador:hover{transform:scale(1.12);box-shadow:0 0 0 3px rgba(255,255,255,.08);}
+.avatar-pagador.p-voce{background:var(--teal);}
+.avatar-pagador.p-esposa{background:var(--violet);color:#fff;}
+.avatar-inline{display:inline-flex;align-items:center;gap:8px;}
 .slider-val{font-family:var(--font-mono);font-weight:700;min-width:52px;text-align:right;color:var(--accent,var(--teal));}
 
 .radio-group{display:flex;gap:10px;}
@@ -553,6 +563,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="progress-track"><div class="progress-fill" id="fin-progress" style="--accent:var(--blue);width:0%"></div></div>
           <div class="hint" id="fin-texto"></div>
           <div class="campo-inline" style="margin-top:12px;"><label>Data do pagamento</label><input type="date" id="fin-data"></div>
+          <div class="avatar-inline" style="margin-top:12px;font-size:12px;color:var(--muted);" id="fin-pagador-wrap"></div>
           <label class="check-line"><input type="checkbox" id="fin-pago"> Parcela deste mês já paga</label>
         </div>
         <div class="card" style="--accent:var(--blue)">
@@ -560,6 +571,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="campo-inline"><label>Valor do condomínio (R$)</label><input type="text" inputmode="decimal" id="cond-valor"></div>
           <div class="hint">Lançado automaticamente como despesa fixa mensal do mês selecionado.</div>
           <div class="campo-inline" style="margin-top:12px;"><label>Data do pagamento</label><input type="date" id="cond-data"></div>
+          <div class="avatar-inline" style="margin-top:12px;font-size:12px;color:var(--muted);" id="cond-pagador-wrap"></div>
           <label class="check-line"><input type="checkbox" id="cond-pago"> Condomínio deste mês já pago</label>
         </div>
       </div>
@@ -575,6 +587,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
             <div class="campo-inline"><label>Outros custos (R$)</label><input type="text" inputmode="decimal" id="carro-outros"></div>
           </div>
           <div class="campo-inline"><label>Data do pagamento</label><input type="date" id="carro-data"></div>
+          <div class="avatar-inline" style="margin-top:0px;font-size:12px;color:var(--muted);" id="carro-pagador-wrap"></div>
           <label class="check-line"><input type="checkbox" id="carro-pago"> Seguro e outros custos já pagos este mês</label>
         </div>
         <div class="card kpi" style="--accent:var(--amber)">
@@ -952,6 +965,25 @@ function marcarAlterado(){
   renderTudo();
 }
 
+/* ============ QUEM PAGOU (AVATAR) ============ */
+document.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.avatar-pagador'); if(!btn) return;
+  const tabela = btn.dataset.pagadorTabela;
+  const id = btn.dataset.pagadorId;
+  const m = getMonthData();
+  switch(tabela){
+    case 'despesas': { const row = m.despesasCasa.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
+    case 'mercado': { const row = m.mercado.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
+    case 'manutencao': { const row = m.carro.manutencaoItens.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
+    case 'acordos': { const row = m.acordos.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
+    case 'financiamento': { m.financiamento.pagador = alternarPagador(m.financiamento.pagador); break; }
+    case 'condominio': { m.condominio.pagador = alternarPagador(m.condominio.pagador); break; }
+    case 'carroFixo': { m.carro.pagadorFixo = alternarPagador(m.carro.pagadorFixo); break; }
+    default: return;
+  }
+  marcarAlterado();
+});
+
 /* ============ CONFIRMAR CAMPO COM ENTER ============ */
 // Enter confirma o valor do campo (dispara o mesmo evento de "sair do campo"), sem precisar clicar em outro lugar
 document.addEventListener('keydown', (e)=>{
@@ -1011,6 +1043,16 @@ document.getElementById('mes-proximo').addEventListener('click', ()=> deslocarMe
 /* ============ CÁLCULOS ============ */
 function somaArr(arr, campo){ return arr.reduce((s,i)=> s + (parseFloat(i[campo])||0), 0); }
 // Detecta itens com valor repetido dentro da mesma lista (ignorando data), exceto os já confirmados como legítimos
+// Gera o avatar clicável de "quem pagou" (Você/Esposa)
+function avatarPagador(pagador, tabela, id){
+  const p = pagador === 'Esposa' ? 'Esposa' : 'Você';
+  const inicial = p === 'Esposa' ? 'E' : 'V';
+  const classe = p === 'Esposa' ? 'p-esposa' : 'p-voce';
+  return `<button type="button" class="avatar-pagador ${classe}" data-pagador-tabela="${tabela}" data-pagador-id="${id}" title="Pago por: ${p} — clique para alternar">${inicial}</button>`;
+}
+function alternarPagador(atual){
+  return atual === 'Esposa' ? 'Você' : 'Esposa';
+}
 function idsRepetidos(lista, campoValor){
   const contagem = {};
   lista.forEach(it=>{
@@ -1190,7 +1232,7 @@ function renderDespesas(){
       <td><input type="text" data-id="${d.id}" data-campo="categoria" class="in-despesa" value="${escAttr(d.categoria)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${formatBRLInput(d.valor)}"></td>
       <td><input type="date" data-id="${d.id}" data-campo="data" class="in-despesa" value="${d.data||''}"></td>
-      <td style="text-align:center;"><input type="checkbox" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></td>
+      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(d.pagador,'despesas',d.id)}<input type="checkbox" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></div></td>
       <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select><button class="btn-del" data-del="${d.id}">✕</button></div></td>`;
     tbody.appendChild(tr);
   });
@@ -1243,7 +1285,7 @@ document.getElementById('tbody-despesas').addEventListener('click', (e)=>{
 });
 document.getElementById('add-despesa').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false, data:'', confirmado:false });
+  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false, data:'', confirmado:false, pagador:'Você' });
   marcarAlterado();
 });
 
@@ -1266,7 +1308,7 @@ function moverItem(origemKey, itemId, destinoKey){
   if(!item) return;
   origem.setArr(m, arrOrigem.filter(i=>i.id!==itemId));
   const textoDescricao = item[origem.campoDesc] || item.descricao || item.categoria || '';
-  const novoItem = { id: uid(), valor: parseFloat(item.valor)||0, pago: !!item.pago, data: item.data||'', confirmado:false };
+  const novoItem = { id: uid(), valor: parseFloat(item.valor)||0, pago: !!item.pago, data: item.data||'', confirmado:false, pagador: item.pagador==='Esposa'?'Esposa':'Você' };
   novoItem[destino.campoDesc] = textoDescricao;
   destino.setArr(m, [...destino.getArr(m), novoItem]);
   toast(`Movido para ${destino.label}`);
@@ -1287,7 +1329,7 @@ function renderMercado(){
       <td><input type="text" data-id="${it.id}" data-campo="descricao" class="in-mercado" value="${escAttr(it.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-mercado" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-mercado" value="${it.data||''}"></td>
-      <td style="text-align:center;"><input type="checkbox" class="chk-mercado" data-id="${it.id}" ${it.pago?'checked':''}></td>
+      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'mercado',it.id)}<input type="checkbox" class="chk-mercado" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
       <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select><button class="btn-del" data-del="${it.id}">✕</button></div></td>`;
     tbody.appendChild(tr);
   });
@@ -1339,7 +1381,7 @@ document.getElementById('tbody-mercado').addEventListener('click', (e)=>{
 });
 document.getElementById('add-mercado').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.mercado.push({ id: uid(), descricao:'Novo gasto', valor:0, pago:false, data:'', confirmado:false });
+  m.mercado.push({ id: uid(), descricao:'Novo gasto', valor:0, pago:false, data:'', confirmado:false, pagador:'Você' });
   marcarAlterado();
 });
 
@@ -1353,9 +1395,11 @@ function renderFinanciamento(){
   document.getElementById('fin-restantes').value = m.financiamento.parcelasRestantes || 0;
   document.getElementById('fin-pago').checked = !!m.financiamento.pago;
   document.getElementById('fin-data').value = m.financiamento.data || '';
+  document.getElementById('fin-pagador-wrap').innerHTML = avatarPagador(m.financiamento.pagador,'financiamento','') + ' quem costuma pagar';
   document.getElementById('cond-valor').value = formatBRLInput(m.condominio.valor||0);
   document.getElementById('cond-pago').checked = !!m.condominio.pago;
   document.getElementById('cond-data').value = m.condominio.data || '';
+  document.getElementById('cond-pagador-wrap').innerHTML = avatarPagador(m.condominio.pagador,'condominio','') + ' quem costuma pagar';
   renderFinanciamentoDerivados();
 }
 function renderFinanciamentoDerivados(){
@@ -1415,6 +1459,7 @@ function renderCarro(){
   document.getElementById('carro-seguro').value = formatBRLInput(m.carro.seguro||0);
   document.getElementById('carro-outros').value = formatBRLInput(m.carro.outros||0);
   document.getElementById('carro-pago').checked = !!m.carro.custosPagos;
+  document.getElementById('carro-pagador-wrap').innerHTML = avatarPagador(m.carro.pagadorFixo,'carroFixo','') + ' quem costuma pagar';
   document.getElementById('carro-data').value = m.carro.segurosOutrosData || '';
 
   const tbodyM = document.getElementById('tbody-manutencao');
@@ -1428,7 +1473,7 @@ function renderCarro(){
       <td><input type="text" data-id="${it.id}" data-campo="descricao" class="in-manutencao" value="${escAttr(it.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-manutencao" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-manutencao" value="${it.data||''}"></td>
-      <td style="text-align:center;"><input type="checkbox" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></td>
+      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'manutencao',it.id)}<input type="checkbox" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
       <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select><button class="btn-del" data-del="${it.id}">✕</button></div></td>`;
     tbodyM.appendChild(tr);
   });
@@ -1502,7 +1547,7 @@ document.getElementById('tbody-manutencao').addEventListener('click', (e)=>{
 });
 document.getElementById('add-manutencao').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false, data:'', confirmado:false });
+  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false, data:'', confirmado:false, pagador:'Você' });
   marcarAlterado();
 });
 document.getElementById('tbody-combustivel').addEventListener('change', (e)=>{
@@ -1572,7 +1617,7 @@ function renderAcordos(){
       <td><input type="number" min="0" data-id="${a.id}" data-campo="parcelasTotais" class="in-acordo" value="${a.parcelasTotais||0}"></td>
       <td><input type="number" min="0" data-id="${a.id}" data-campo="parcelasPagas" class="in-acordo" value="${a.parcelasPagas||0}"></td>
       <td><input type="date" data-id="${a.id}" data-campo="data" class="in-acordo" value="${a.data||''}"></td>
-      <td style="text-align:center;"><input type="checkbox" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></td>
+      <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(a.pagador,'acordos',a.id)}<input type="checkbox" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></div></td>
       <td><span class="badge ${quitado||pagoMes?'teal':'magenta'}" data-badge="${a.id}">${quitado ? 'Quitado' : (pagoMes ? 'Pago este mês' : (totais>0 ? (totais-pagas)+' restantes' : 'em aberto'))}</span></td>
       <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${a.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<button class="btn-del" data-del="${a.id}">✕</button></div></td>`;
     tbody.appendChild(tr);
@@ -1621,7 +1666,7 @@ document.getElementById('tbody-acordos').addEventListener('click', (e)=>{
 });
 document.getElementById('add-acordo').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data:'', confirmado:false });
+  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data:'', confirmado:false, pagador:'Você' });
   marcarAlterado();
 });
 
