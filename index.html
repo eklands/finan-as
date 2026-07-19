@@ -495,6 +495,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="kpi-label">Saldo do mês</div>
           <div class="kpi-value" id="kpi-saldo">R$ 0,00</div>
           <div class="kpi-sub" id="kpi-saldo-sub"></div>
+          <div class="campo-row" style="margin-top:10px;">
+            <div class="campo-inline" style="margin-bottom:0;"><label>Saldo inicial — Você</label><input type="text" inputmode="decimal" id="saldo-inicial-voce"></div>
+            <div class="campo-inline" style="margin-bottom:0;"><label>Saldo inicial — Esposa</label><input type="text" inputmode="decimal" id="saldo-inicial-esposa"></div>
+          </div>
         </div>
         <div class="card kpi" style="--accent:var(--amber)">
           <div class="kpi-label">Taxa de poupança</div>
@@ -872,7 +876,9 @@ function defaultMonthData(){
     acordos: [],
     reservaFerias: { meta:0, valorAtual:0, aporteMes:0 },
     investimentos: [],
-    mesada: { valorManual:0 }
+    mesada: { valorManual:0 },
+    saldoInicialVoce: 0,
+    saldoInicialEsposa: 0
   };
 }
 function defaultConfig(){
@@ -1001,6 +1007,8 @@ function salvarConfigDebounced(){
 function normalizarMes(m){
   if(!m.receitas) m.receitas = [];
   if(!m.despesasCasa) m.despesasCasa = [];
+  if(m.saldoInicialVoce === undefined) m.saldoInicialVoce = 0;
+  if(m.saldoInicialEsposa === undefined) m.saldoInicialEsposa = 0;
   if(!m.acordos) m.acordos = [];
   if(!m.investimentos) m.investimentos = [];
   if(!m.reservaFerias) m.reservaFerias = { meta:0, valorAtual:0, aporteMes:0 };
@@ -1066,6 +1074,18 @@ document.addEventListener('keydown', (e)=>{
     e.preventDefault();
     el.blur();
   }
+});
+
+/* ============ SALDO INICIAL (HERDADO DE MESES ANTERIORES) ============ */
+document.getElementById('saldo-inicial-voce').addEventListener('change', (e)=>{
+  const m = getMonthData();
+  m.saldoInicialVoce = parseBRL(e.target.value);
+  marcarAlterado();
+});
+document.getElementById('saldo-inicial-esposa').addEventListener('change', (e)=>{
+  const m = getMonthData();
+  m.saldoInicialEsposa = parseBRL(e.target.value);
+  marcarAlterado();
 });
 
 /* ============ LANÇAMENTO RÁPIDO ============ */
@@ -1302,13 +1322,20 @@ function resumoMes(m){
   }
   const mesadaEfetiva = (parseFloat(m.mesada.valorManual)||0) > 0 ? parseFloat(m.mesada.valorManual) : mesadaSugerida;
 
-  const saldo = saldoAntesMesada - mesadaEfetiva;
-  const saldoProjetado = saldoProjetadoAntesMesada - mesadaEfetiva;
+  // Saldo herdado de contas de meses anteriores (por pessoa, já que cada um tem conta própria)
+  const saldoInicialVoce = parseFloat(m.saldoInicialVoce)||0;
+  const saldoInicialEsposa = parseFloat(m.saldoInicialEsposa)||0;
+  const saldoInicial = saldoInicialVoce + saldoInicialEsposa;
+
+  const saldoProprio = saldoAntesMesada - mesadaEfetiva;
+  const saldoProjetadoProprio = saldoProjetadoAntesMesada - mesadaEfetiva;
+  const saldo = saldoProprio + saldoInicial;
+  const saldoProjetado = saldoProjetadoProprio + saldoInicial;
   const despesaTotalGeral = contasPagas + investAporteTotal + reservaAporte + mesadaEfetiva;
   const poupancaPercent = receitaTotal>0 ? ((investAporteTotal+reservaAporte)/receitaTotal*100) : 0;
 
-  let score = 50 + poupancaPercent*1.4 + (saldo>=0 ? 14 : -26);
-  if(receitaTotal>0 && (saldo/receitaTotal) > 0.12) score += 10;
+  let score = 50 + poupancaPercent*1.4 + (saldoProprio>=0 ? 14 : -26);
+  if(receitaTotal>0 && (saldoProprio/receitaTotal) > 0.12) score += 10;
   if(contasTotal > receitaTotal) score -= 15;
   score = Math.round(clamp(score, 0, 100));
 
@@ -1316,6 +1343,7 @@ function resumoMes(m){
     receitaTotal, despesaCasaTotal, mercadoTotal, financiamentoValor, condominioValor,
     combustivelTotal, carroFixoTotal, carroTotal, acordosTotal, investAporteTotal, investSaldoTotal,
     reservaAporte, despesaFixaTotal, saldoAntesMesada, saldoProjetadoAntesMesada, mesadaSugerida, mesadaEfetiva,
+    saldoProprio, saldoProjetadoProprio, saldoInicialVoce, saldoInicialEsposa, saldoInicial,
     saldo, saldoProjetado, despesaTotalGeral, poupancaPercent, score,
     despesaCasaPaga, mercadoPago, financiamentoPago, condominioPago, carroFixoPago, acordosPagoMes,
     contasTotal, contasPagas, contasPendentes, pctPago
@@ -2149,6 +2177,8 @@ function renderVisaoGeral(){
   document.getElementById('kpi-saldo').textContent = fmtNum(r.saldo);
   document.getElementById('kpi-saldo').style.color = r.saldo>=0 ? 'var(--teal)' : 'var(--magenta)';
   document.getElementById('kpi-saldo-sub').textContent = (r.saldo>=0 ? 'saldo positivo até agora' : 'atenção: já negativo') + ` · projetado com pendências: ${fmtNum(r.saldoProjetado)}`;
+  document.getElementById('saldo-inicial-voce').value = formatBRLInput(m.saldoInicialVoce||0);
+  document.getElementById('saldo-inicial-esposa').value = formatBRLInput(m.saldoInicialEsposa||0);
   document.getElementById('kpi-poupanca').textContent = r.poupancaPercent.toFixed(1)+'%';
 
   document.getElementById('contas-pct').textContent = r.pctPago.toFixed(0)+'%';
@@ -2180,7 +2210,7 @@ function renderVisaoGeral(){
   const meses = todosMesesOrdenados();
   let acumulado = 0, pico = -Infinity, maiorQueda = 0;
   meses.forEach(k=>{
-    acumulado += resumoMes(allMonths[k]).saldo;
+    acumulado += resumoMes(allMonths[k]).saldoProprio;
     pico = Math.max(pico, acumulado);
     maiorQueda = Math.max(maiorQueda, pico - acumulado);
   });
