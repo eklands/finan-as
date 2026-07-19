@@ -1010,9 +1010,11 @@ function verificarCargaCompleta(){
 function salvarMes(key, data){
   setDoc(doc(db, 'meses', key), data).then(()=> {
     pendingLocal.delete(key);
+    atualizarBotaoSincronizar();
     toast('Sincronizado');
   }).catch(err=>{
     pendingLocal.delete(key);
+    atualizarBotaoSincronizar();
     console.error(err); toast('Erro ao salvar — verifique conexão');
   });
 }
