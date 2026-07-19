@@ -734,7 +734,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="card-total" id="total-combustivel" style="color:var(--amber)">R$ 0,00</div>
         </div>
         <div class="tabela-scroll"><table class="tabela">
-          <thead><tr><th style="width:130px">Data</th><th>Valor (R$)</th><th>Litros</th><th>Km rodado</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th style="width:130px">Data</th><th>Valor (R$)</th><th>Litros</th><th>Km rodado</th><th>Quem</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-combustivel"></tbody>
         </table></div>
         <button class="btn-add" id="add-combustivel" style="--accent:var(--amber)">+ Lançar abastecimento</button>
@@ -799,7 +799,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="card-total" id="total-investimentos" style="color:var(--violet)">R$ 0,00</div>
         </div>
         <div class="tabela-scroll"><table class="tabela">
-          <thead><tr><th>Descrição</th><th>Saldo atual (R$)</th><th>Aporte mensal (R$)</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th>Descrição</th><th>Saldo atual (R$)</th><th>Aporte mensal (R$)</th><th>Quem</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-investimentos"></tbody>
         </table></div>
         <button class="btn-add" id="add-investimento" style="--accent:var(--violet)">+ Adicionar investimento</button>
@@ -1154,6 +1154,8 @@ document.addEventListener('click', (e)=>{
     case 'despesas': { const row = m.despesasCasa.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
     case 'mercado': { const row = m.mercado.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
     case 'manutencao': { const row = m.carro.manutencaoItens.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
+    case 'combustivel': { const row = m.carro.combustivel.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
+    case 'investimento': { const row = m.investimentos.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
     case 'acordos': { const row = m.acordos.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
     case 'financiamento': { m.financiamento.pagador = alternarPagador(m.financiamento.pagador); break; }
     case 'condominio': { m.condominio.pagador = alternarPagador(m.condominio.pagador); break; }
@@ -1837,7 +1839,8 @@ function renderCarro(){
       <td><input type="text" inputmode="decimal" data-id="${c.id}" data-campo="valor" class="in-combustivel" value="${formatBRLInput(c.valor||0)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${c.id}" data-campo="litros" class="in-combustivel" value="${formatBRLInput(c.litros||0)}"></td>
       <td><input type="number" step="1" min="0" data-id="${c.id}" data-campo="km" class="in-combustivel" value="${c.km||0}"></td>
-      <td class="col-acao"><button class="btn-del" data-del="${c.id}">✕</button></td>`;
+      <td style="text-align:center;">${avatarPagador(c.pagador,'combustivel',c.id)}</td>
+      <td class="col-acao">${ehDonoDoItem(c.pagador)?`<button class="btn-del" data-del="${c.id}">✕</button>`:''}</td>`;
     tbody.appendChild(tr);
   });
 
@@ -1914,6 +1917,8 @@ document.getElementById('tbody-combustivel').addEventListener('change', (e)=>{
 document.getElementById('tbody-combustivel').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]'); if(!del) return;
   const m = getMonthData();
+  const row = m.carro.combustivel.find(c=>c.id===del.dataset.del);
+  if(row && !ehDonoDoItem(row.pagador)){ toast('Você só pode excluir lançamentos seus'); return; }
   m.carro.combustivel = m.carro.combustivel.filter(c=>c.id!==del.dataset.del);
   renderCarro();
   salvarMesDebounced(currentMonth);
@@ -1922,7 +1927,7 @@ document.getElementById('tbody-combustivel').addEventListener('click', (e)=>{
 document.getElementById('add-combustivel').addEventListener('click', ()=>{
   const m = getMonthData();
   const hoje = new Date().toISOString().slice(0,10);
-  m.carro.combustivel.push({ id: uid(), data: hoje, valor:0, litros:0, km:0 });
+  m.carro.combustivel.push({ id: uid(), data: hoje, valor:0, litros:0, km:0, pagador:'Você' });
   renderCarro();
   salvarMesDebounced(currentMonth);
 });
@@ -2044,7 +2049,8 @@ function renderReservasInvestimentos(){
       <td><input type="text" data-id="${inv.id}" data-campo="descricao" class="in-investimento" value="${escAttr(inv.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${inv.id}" data-campo="valorAtual" class="in-investimento" value="${formatBRLInput(inv.valorAtual||0)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${inv.id}" data-campo="aporteMes" class="in-investimento" value="${formatBRLInput(inv.aporteMes||0)}"></td>
-      <td class="col-acao"><button class="btn-del" data-del="${inv.id}">✕</button></td>`;
+      <td style="text-align:center;">${avatarPagador(inv.pagador,'investimento',inv.id)}</td>
+      <td class="col-acao">${ehDonoDoItem(inv.pagador)?`<button class="btn-del" data-del="${inv.id}">✕</button>`:''}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('total-investimentos').textContent = fmtNum(somaArr(m.investimentos,'valorAtual'));
@@ -2105,6 +2111,8 @@ document.getElementById('tbody-investimentos').addEventListener('change', (e)=>{
 document.getElementById('tbody-investimentos').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]'); if(!del) return;
   const m = getMonthData();
+  const row = m.investimentos.find(i=>i.id===del.dataset.del);
+  if(row && !ehDonoDoItem(row.pagador)){ toast('Você só pode excluir lançamentos seus'); return; }
   m.investimentos = m.investimentos.filter(i=>i.id!==del.dataset.del);
   renderReservasInvestimentos();
   salvarMesDebounced(currentMonth);
@@ -2112,7 +2120,7 @@ document.getElementById('tbody-investimentos').addEventListener('click', (e)=>{
 });
 document.getElementById('add-investimento').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.investimentos.push({ id: uid(), descricao:'Novo investimento', valorAtual:0, aporteMes:0 });
+  m.investimentos.push({ id: uid(), descricao:'Novo investimento', valorAtual:0, aporteMes:0, pagador:'Você' });
   renderReservasInvestimentos();
   salvarMesDebounced(currentMonth);
 });
