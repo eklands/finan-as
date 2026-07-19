@@ -236,7 +236,8 @@ main{max-width:1360px;margin:0 auto;padding:22px;}
 .kpi-sub{font-size:11.5px;color:var(--muted-2);margin-top:6px;}
 
 /* Tables */
-.tabela{width:100%;border-collapse:collapse;font-size:13px;}
+.tabela-scroll{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.tabela{width:100%;min-width:600px;border-collapse:collapse;font-size:13px;}
 .tabela th{
   text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;
   color:var(--muted-2);padding:6px 8px;border-bottom:1px solid var(--line-soft);font-weight:600;
@@ -385,6 +386,36 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
   border-radius:9px;padding:11px 16px;font-size:13px;cursor:pointer;transition:all .15s;
 }
 .btn-cancelar-lr:hover{border-color:var(--magenta);color:var(--magenta);}
+
+/* ---------- CELULAR ---------- */
+@media(max-width:720px){
+  .topbar{padding:10px 14px;}
+  .topbar-inner{gap:8px;}
+  .brand-text{font-size:13px;}
+  .clock{display:none;}
+  .mes-picker{gap:5px;}
+  .mes-picker input{padding:6px 6px;font-size:12px;}
+  .btn-mes-nav{width:26px;height:26px;}
+  .saldo-chip{font-size:13px;padding:7px 10px;}
+  .btn-lote,.btn-sincronizar-agora{font-size:11px;padding:7px 9px;}
+  .user-chip span:not(.sync-dot){display:none;}
+  main{padding:12px;}
+  .card{padding:15px;}
+  .grid{gap:12px;}
+  .tabs{padding:8px 14px 0;}
+  .tab-btn{padding:9px 11px;font-size:12px;}
+  .kpi-value{font-size:21px;}
+  .gauge-card{justify-content:center;text-align:center;}
+  .gauge-info{text-align:left;}
+  .chart-wrap{height:220px;}
+  .chart-wrap.sm{height:180px;}
+  .campo-row{grid-template-columns:1fr;}
+}
+@media(max-width:420px){
+  .brand-text small{font-size:9.5px;}
+  .saldo-chip{font-size:12px;padding:6px 8px;}
+  .tab-btn{padding:8px 9px;font-size:11.5px;}
+}
 </style>
 </head>
 <body>
@@ -585,10 +616,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="card-title">Proventos <span>salários, extras e outras entradas</span></div>
           <div class="card-total" id="total-receitas">R$ 0,00</div>
         </div>
-        <table class="tabela">
+        <div class="tabela-scroll"><table class="tabela">
           <thead><tr><th>Titular</th><th>Instituição</th><th>Descrição</th><th>Valor mensal</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-receitas"></tbody>
-        </table>
+        </table></div>
         <button class="btn-add" id="add-receita" style="--accent:var(--teal)">+ Adicionar provento</button>
         <div class="hint">Mínimo recomendado de 4 fontes cadastradas (ex: salário de cada um + rendas extras) para o painel ter uma visão completa.</div>
       </div>
@@ -604,10 +635,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
             <div class="card-total" id="total-despesas" style="color:var(--magenta)">R$ 0,00</div>
           </div>
         </div>
-        <table class="tabela">
+        <div class="tabela-scroll"><table class="tabela">
           <thead><tr><th>Categoria</th><th>Valor do mês</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-despesas"></tbody>
-        </table>
+        </table></div>
         <div class="hint" id="sub-despesas"></div>
         <button class="btn-add" id="add-despesa" style="--accent:var(--magenta)">+ Adicionar categoria</button>
       </div>
@@ -623,10 +654,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
             <div class="card-total" id="total-mercado" style="color:var(--coral)">R$ 0,00</div>
           </div>
         </div>
-        <table class="tabela">
+        <div class="tabela-scroll"><table class="tabela">
           <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-mercado"></tbody>
-        </table>
+        </table></div>
         <div class="hint" id="sub-mercado"></div>
         <button class="btn-add" id="add-mercado" style="--accent:var(--coral)">+ Adicionar gasto</button>
       </div>
@@ -690,10 +721,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
             <div class="card-total" id="total-manutencao" style="color:var(--amber)">R$ 0,00</div>
           </div>
         </div>
-        <table class="tabela">
+        <div class="tabela-scroll"><table class="tabela">
           <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-manutencao"></tbody>
-        </table>
+        </table></div>
         <div class="hint" id="sub-manutencao"></div>
         <button class="btn-add" id="add-manutencao" style="--accent:var(--amber)">+ Adicionar item</button>
       </div>
@@ -702,10 +733,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="card-title">Combustível <span>lançamento diário</span></div>
           <div class="card-total" id="total-combustivel" style="color:var(--amber)">R$ 0,00</div>
         </div>
-        <table class="tabela">
+        <div class="tabela-scroll"><table class="tabela">
           <thead><tr><th style="width:130px">Data</th><th>Valor (R$)</th><th>Litros</th><th>Km rodado</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-combustivel"></tbody>
-        </table>
+        </table></div>
         <button class="btn-add" id="add-combustivel" style="--accent:var(--amber)">+ Lançar abastecimento</button>
         <div class="chart-wrap sm" style="margin-top:18px;"><canvas id="chart-combustivel"></canvas></div>
       </div>
@@ -721,10 +752,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
             <div class="card-total" id="total-acordos" style="color:var(--magenta)">R$ 0,00</div>
           </div>
         </div>
-        <table class="tabela">
+        <div class="tabela-scroll"><table class="tabela">
           <thead><tr><th>Descrição</th><th>Parcela (R$)</th><th>Parcelas totais</th><th>Parcelas pagas</th><th>Data</th><th>Pago?</th><th>Situação</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-acordos"></tbody>
-        </table>
+        </table></div>
         <button class="btn-add" id="add-acordo" style="--accent:var(--magenta)">+ Adicionar acordo</button>
         <div class="hint"><b>Situação</b> e valor restante são calculados automaticamente conforme as parcelas pagas.</div>
       </div>
@@ -767,10 +798,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <div class="card-title">Investimentos <span>saldo atual e aportes mensais</span></div>
           <div class="card-total" id="total-investimentos" style="color:var(--violet)">R$ 0,00</div>
         </div>
-        <table class="tabela">
+        <div class="tabela-scroll"><table class="tabela">
           <thead><tr><th>Descrição</th><th>Saldo atual (R$)</th><th>Aporte mensal (R$)</th><th class="col-acao"></th></tr></thead>
           <tbody id="tbody-investimentos"></tbody>
-        </table>
+        </table></div>
         <button class="btn-add" id="add-investimento" style="--accent:var(--violet)">+ Adicionar investimento</button>
       </div>
       <div class="card" style="--accent:var(--violet)">
