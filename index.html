@@ -217,6 +217,17 @@ main{max-width:1360px;margin:0 auto;padding:22px;}
 .card-title span{color:var(--muted-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;font-family:var(--font-body);}
 .card-total{font-family:var(--font-mono);font-weight:700;font-size:17px;color:var(--accent,var(--teal));}
 .total-tag{font-size:9.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;}
+.btn-lote{
+  background:var(--panel);border:1px solid var(--line);color:var(--muted);
+  padding:8px 12px;border-radius:10px;font-size:12px;font-weight:600;transition:all .15s;
+}
+.btn-lote:hover{border-color:var(--muted);}
+.btn-lote.ativo{background:var(--amber-dim);border-color:var(--amber);color:var(--amber);}
+.btn-sincronizar-agora{
+  background:linear-gradient(135deg, var(--teal), #00b894);border:none;color:#04140f;
+  padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;
+  animation:pulse 2s ease-in-out infinite;
+}
 
 /* KPI */
 .kpi{padding:18px 20px;}
@@ -424,6 +435,8 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
           <button class="btn-mes-nav" id="mes-proximo" type="button" title="Próximo mês">›</button>
         </div>
         <div class="saldo-chip pos" id="chip-saldo">R$ 0,00</div>
+        <button class="btn-lote" id="btn-modo-lote" type="button" title="Enquanto ativado, os lançamentos ficam guardados no aparelho e só sobem pro banco quando você desativar ou clicar em Sincronizar">📥 Lote: OFF</button>
+        <button class="btn-sincronizar-agora" id="btn-sincronizar-agora" type="button" style="display:none;">Sincronizar agora</button>
         <div class="user-chip"><span class="sync-dot" id="sync-dot"></span><span id="user-email"></span></div>
         <button class="btn-sair" id="btn-sair">Sair</button>
       </div>
@@ -1003,11 +1016,46 @@ function salvarMes(key, data){
     console.error(err); toast('Erro ao salvar — verifique conexão');
   });
 }
+let modoLote = false;
 function salvarMesDebounced(key){
   pendingLocal.add(key);
   clearTimeout(saveTimers[key]);
+  if(modoLote){ atualizarBotaoSincronizar(); return; }
   saveTimers[key] = setTimeout(()=> salvarMes(key, allMonths[key]), 600);
 }
+function sincronizarPendentesAgora(){
+  if(pendingLocal.size === 0){ toast('Nada pendente pra sincronizar'); return; }
+  pendingLocal.forEach(key=>{
+    clearTimeout(saveTimers[key]);
+    salvarMes(key, allMonths[key]);
+  });
+  atualizarBotaoSincronizar();
+}
+function atualizarBotaoSincronizar(){
+  const btn = document.getElementById('btn-sincronizar-agora');
+  if(modoLote && pendingLocal.size > 0){
+    btn.style.display = '';
+    btn.textContent = `Sincronizar agora (${pendingLocal.size})`;
+  } else {
+    btn.style.display = 'none';
+  }
+}
+document.getElementById('btn-modo-lote').addEventListener('click', ()=>{
+  modoLote = !modoLote;
+  const btn = document.getElementById('btn-modo-lote');
+  btn.textContent = modoLote ? '📥 Lote: ON' : '📥 Lote: OFF';
+  btn.classList.toggle('ativo', modoLote);
+  if(!modoLote){ sincronizarPendentesAgora(); }
+  else { atualizarBotaoSincronizar(); }
+});
+document.getElementById('btn-sincronizar-agora').addEventListener('click', sincronizarPendentesAgora);
+window.addEventListener('beforeunload', (e)=>{
+  if(pendingLocal.size > 0){
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
 function salvarConfigDebounced(){
   clearTimeout(saveTimers['__config']);
   saveTimers['__config'] = setTimeout(()=>{
@@ -1453,7 +1501,8 @@ function renderDespesas(){
   const tbody = document.getElementById('tbody-despesas');
   tbody.innerHTML = '';
   const repetidos = idsRepetidos(m.despesasCasa, 'valor');
-  m.despesasCasa.forEach(d=>{
+  const ordenados = [...m.despesasCasa].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+  ordenados.forEach(d=>{
     const tr = document.createElement('tr');
     const dup = repetidos.has(d.id);
     if(dup) tr.className = 'linha-duplicada';
@@ -1550,7 +1599,8 @@ function renderMercado(){
   const tbody = document.getElementById('tbody-mercado');
   tbody.innerHTML = '';
   const repetidos = idsRepetidos(m.mercado, 'valor');
-  m.mercado.forEach(it=>{
+  const ordenadosMercado = [...m.mercado].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+  ordenadosMercado.forEach(it=>{
     const tr = document.createElement('tr');
     const dup = repetidos.has(it.id);
     if(dup) tr.className = 'linha-duplicada';
@@ -1694,7 +1744,8 @@ function renderCarro(){
   const tbodyM = document.getElementById('tbody-manutencao');
   tbodyM.innerHTML = '';
   const repetidosM = idsRepetidos(m.carro.manutencaoItens, 'valor');
-  m.carro.manutencaoItens.forEach(it=>{
+  const ordenadosManutencao = [...m.carro.manutencaoItens].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+  ordenadosManutencao.forEach(it=>{
     const tr = document.createElement('tr');
     const dup = repetidosM.has(it.id);
     if(dup) tr.className = 'linha-duplicada';
@@ -1709,7 +1760,7 @@ function renderCarro(){
 
   const tbody = document.getElementById('tbody-combustivel');
   tbody.innerHTML = '';
-  const ordenado = [...m.carro.combustivel].sort((a,b)=> (a.data||'').localeCompare(b.data||''));
+  const ordenado = [...m.carro.combustivel].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
   ordenado.forEach(c=>{
     const tr = document.createElement('tr');
     tr.innerHTML = `
@@ -1831,7 +1882,8 @@ function renderAcordos(){
   const tbody = document.getElementById('tbody-acordos');
   tbody.innerHTML = '';
   const repetidos = idsRepetidos(m.acordos, 'parcela');
-  m.acordos.forEach(a=>{
+  const ordenadosAcordos = [...m.acordos].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
+  ordenadosAcordos.forEach(a=>{
     const totais = parseInt(a.parcelasTotais)||0;
     const pagas = clamp(parseInt(a.parcelasPagas)||0, 0, totais||9999);
     const quitado = totais>0 && pagas>=totais;
