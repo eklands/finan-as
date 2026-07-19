@@ -1019,10 +1019,11 @@ function salvarMes(key, data){
   });
 }
 let modoLote = false;
+let contadorEdicoesLote = 0;
 function salvarMesDebounced(key){
   pendingLocal.add(key);
   clearTimeout(saveTimers[key]);
-  if(modoLote){ atualizarBotaoSincronizar(); return; }
+  if(modoLote){ contadorEdicoesLote++; atualizarBotaoSincronizar(); return; }
   saveTimers[key] = setTimeout(()=> salvarMes(key, allMonths[key]), 600);
 }
 function sincronizarPendentesAgora(){
@@ -1031,13 +1032,14 @@ function sincronizarPendentesAgora(){
     clearTimeout(saveTimers[key]);
     salvarMes(key, allMonths[key]);
   });
+  contadorEdicoesLote = 0;
   atualizarBotaoSincronizar();
 }
 function atualizarBotaoSincronizar(){
   const btn = document.getElementById('btn-sincronizar-agora');
   if(modoLote && pendingLocal.size > 0){
     btn.style.display = '';
-    btn.textContent = `Sincronizar agora (${pendingLocal.size})`;
+    btn.textContent = `Sincronizar agora (${contadorEdicoesLote} ${contadorEdicoesLote===1?'edição':'edições'})`;
   } else {
     btn.style.display = 'none';
   }
@@ -1048,7 +1050,7 @@ document.getElementById('btn-modo-lote').addEventListener('click', ()=>{
   btn.textContent = modoLote ? '📥 Lote: ON' : '📥 Lote: OFF';
   btn.classList.toggle('ativo', modoLote);
   if(!modoLote){ sincronizarPendentesAgora(); }
-  else { atualizarBotaoSincronizar(); }
+  else { contadorEdicoesLote = 0; atualizarBotaoSincronizar(); }
 });
 document.getElementById('btn-sincronizar-agora').addEventListener('click', sincronizarPendentesAgora);
 window.addEventListener('beforeunload', (e)=>{
@@ -1312,19 +1314,25 @@ function avatarPagador(pagador, tabela, id){
 function alternarPagador(atual){
   return atual === 'Esposa' ? 'Você' : 'Esposa';
 }
-function idsRepetidos(lista, campoValor){
+function idsRepetidos(lista, campoValor, campoDescricao){
+  const chaveDe = (it)=>{
+    const v = (parseFloat(it[campoValor])||0).toFixed(2);
+    const desc = String(it[campoDescricao]||'').trim().toLowerCase();
+    const data = it.data || '';
+    if(v === '0.00' || !data) return null;
+    return `${data}|${v}|${desc}`;
+  };
   const contagem = {};
   lista.forEach(it=>{
     if(it.confirmado) return;
-    const v = (parseFloat(it[campoValor])||0).toFixed(2);
-    if(v === '0.00') return;
-    contagem[v] = (contagem[v]||0) + 1;
+    const chave = chaveDe(it);
+    if(chave) contagem[chave] = (contagem[chave]||0) + 1;
   });
   const repetidos = new Set();
   lista.forEach(it=>{
     if(it.confirmado) return;
-    const v = (parseFloat(it[campoValor])||0).toFixed(2);
-    if(v !== '0.00' && contagem[v] > 1) repetidos.add(it.id);
+    const chave = chaveDe(it);
+    if(chave && contagem[chave] > 1) repetidos.add(it.id);
   });
   return repetidos;
 }
@@ -1354,10 +1362,10 @@ function resumoMes(m){
   const despesaFixaTotal = despesaCasaTotal + mercadoTotal + financiamentoValor + condominioValor + carroTotal + acordosTotal;
 
   // Só conta como "descontado de verdade" o que está marcado como pago E não é uma duplicidade ainda não confirmada
-  const repDespesas = idsRepetidos(m.despesasCasa, 'valor');
-  const repMercado = idsRepetidos(m.mercado, 'valor');
-  const repManutencao = idsRepetidos(m.carro.manutencaoItens, 'valor');
-  const repAcordos = idsRepetidos(acordosAtivos, 'parcela');
+  const repDespesas = idsRepetidos(m.despesasCasa, 'valor', 'categoria');
+  const repMercado = idsRepetidos(m.mercado, 'valor', 'descricao');
+  const repManutencao = idsRepetidos(m.carro.manutencaoItens, 'valor', 'descricao');
+  const repAcordos = idsRepetidos(acordosAtivos, 'parcela', 'descricao');
 
   const despesaCasaPaga = somaArr(m.despesasCasa.filter(d=>d.pago && !repDespesas.has(d.id)), 'valor');
   const mercadoPago = somaArr(m.mercado.filter(d=>d.pago && !repMercado.has(d.id)), 'valor');
@@ -1502,7 +1510,7 @@ function renderDespesas(){
   const m = getMonthData();
   const tbody = document.getElementById('tbody-despesas');
   tbody.innerHTML = '';
-  const repetidos = idsRepetidos(m.despesasCasa, 'valor');
+  const repetidos = idsRepetidos(m.despesasCasa, 'valor', 'categoria');
   const ordenados = [...m.despesasCasa].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
   ordenados.forEach(d=>{
     const tr = document.createElement('tr');
@@ -1600,7 +1608,7 @@ function renderMercado(){
   const m = getMonthData();
   const tbody = document.getElementById('tbody-mercado');
   tbody.innerHTML = '';
-  const repetidos = idsRepetidos(m.mercado, 'valor');
+  const repetidos = idsRepetidos(m.mercado, 'valor', 'descricao');
   const ordenadosMercado = [...m.mercado].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
   ordenadosMercado.forEach(it=>{
     const tr = document.createElement('tr');
@@ -1745,7 +1753,7 @@ function renderCarro(){
 
   const tbodyM = document.getElementById('tbody-manutencao');
   tbodyM.innerHTML = '';
-  const repetidosM = idsRepetidos(m.carro.manutencaoItens, 'valor');
+  const repetidosM = idsRepetidos(m.carro.manutencaoItens, 'valor', 'descricao');
   const ordenadosManutencao = [...m.carro.manutencaoItens].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
   ordenadosManutencao.forEach(it=>{
     const tr = document.createElement('tr');
@@ -1883,7 +1891,7 @@ function renderAcordos(){
   const m = getMonthData();
   const tbody = document.getElementById('tbody-acordos');
   tbody.innerHTML = '';
-  const repetidos = idsRepetidos(m.acordos, 'parcela');
+  const repetidos = idsRepetidos(m.acordos, 'parcela', 'descricao');
   const ordenadosAcordos = [...m.acordos].sort((a,b)=> (b.data||'').localeCompare(a.data||''));
   ordenadosAcordos.forEach(a=>{
     const totais = parseInt(a.parcelasTotais)||0;
