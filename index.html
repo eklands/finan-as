@@ -1343,6 +1343,19 @@ document.getElementById('mes-proximo').addEventListener('click', ()=> deslocarMe
 
 /* ============ CÁLCULOS ============ */
 function somaArr(arr, campo){ return arr.reduce((s,i)=> s + (parseFloat(i[campo])||0), 0); }
+// Mapeia o e-mail de login para "Você" / "Esposa" — usado pra restringir quem pode excluir cada lançamento
+const EMAIL_PARA_TITULAR = {
+  'eklands@gmail.com': 'Você',
+  'luek1998@yahoo.com.br': 'Esposa'
+};
+function titularAtual(){
+  if(!currentUser || !currentUser.email) return null;
+  return EMAIL_PARA_TITULAR[currentUser.email.toLowerCase()] || null;
+}
+function ehDonoDoItem(pagador){
+  const dono = (pagador === 'Esposa') ? 'Esposa' : 'Você';
+  return dono === titularAtual();
+}
 // Detecta itens com valor repetido dentro da mesma lista (ignorando data), exceto os já confirmados como legítimos
 // Gera o avatar clicável de "quem pagou" (Você/Esposa)
 function avatarPagador(pagador, tabela, id){
@@ -1519,7 +1532,7 @@ function renderReceitas(){
       <td><input type="text" data-id="${r.id}" data-campo="instituicao" class="in-receita" value="${escAttr(r.instituicao)}"></td>
       <td><input type="text" data-id="${r.id}" data-campo="descricao" class="in-receita" value="${escAttr(r.descricao)}"></td>
       <td><input type="text" inputmode="decimal" data-id="${r.id}" data-campo="valor" class="in-receita" value="${formatBRLInput(r.valor)}"></td>
-      <td class="col-acao"><button class="btn-del" data-del="${r.id}">✕</button></td>`;
+      <td class="col-acao">${ehDonoDoItem(r.titular) ? `<button class="btn-del" data-del="${r.id}">✕</button>` : ''}</td>`;
     tbody.appendChild(tr);
   });
   document.getElementById('total-receitas').textContent = fmtNum(somaArr(m.receitas,'valor'));
@@ -1536,6 +1549,8 @@ document.getElementById('tbody-receitas').addEventListener('change', (e)=>{
 document.getElementById('tbody-receitas').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]'); if(!del) return;
   const m = getMonthData();
+  const row = m.receitas.find(r=>r.id===del.dataset.del);
+  if(row && !ehDonoDoItem(row.titular)){ toast('Você só pode excluir lançamentos seus'); return; }
   m.receitas = m.receitas.filter(r=>r.id!==del.dataset.del);
   marcarAlterado();
 });
@@ -1561,7 +1576,7 @@ function renderDespesas(){
       <td><input type="text" inputmode="decimal" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${formatBRLInput(d.valor)}"></td>
       <td><input type="date" data-id="${d.id}" data-campo="data" class="in-despesa" value="${d.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(d.pagador,'despesas',d.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select><button class="btn-del" data-del="${d.id}">✕</button></div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select>${ehDonoDoItem(d.pagador)?`<button class="btn-del" data-del="${d.id}">✕</button>`:''}</div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalDespesas();
@@ -1599,6 +1614,8 @@ document.getElementById('tbody-despesas').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]');
   if(del){
     const m = getMonthData();
+    const row = m.despesasCasa.find(d=>d.id===del.dataset.del);
+    if(row && !ehDonoDoItem(row.pagador)){ toast('Você só pode excluir lançamentos seus'); return; }
     m.despesasCasa = m.despesasCasa.filter(d=>d.id!==del.dataset.del);
     marcarAlterado();
     return;
@@ -1659,7 +1676,7 @@ function renderMercado(){
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-mercado" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-mercado" value="${it.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'mercado',it.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-mercado" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select><button class="btn-del" data-del="${it.id}">✕</button></div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select>${ehDonoDoItem(it.pagador)?`<button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalMercado();
@@ -1696,6 +1713,8 @@ document.getElementById('tbody-mercado').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]');
   if(del){
     const m = getMonthData();
+    const row = m.mercado.find(d=>d.id===del.dataset.del);
+    if(row && !ehDonoDoItem(row.pagador)){ toast('Você só pode excluir lançamentos seus'); return; }
     m.mercado = m.mercado.filter(d=>d.id!==del.dataset.del);
     marcarAlterado();
     return;
@@ -1804,7 +1823,7 @@ function renderCarro(){
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-manutencao" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-manutencao" value="${it.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'manutencao',it.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select><button class="btn-del" data-del="${it.id}">✕</button></div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select>${ehDonoDoItem(it.pagador)?`<button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
     tbodyM.appendChild(tr);
   });
 
@@ -1863,6 +1882,8 @@ document.getElementById('tbody-manutencao').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]');
   if(del){
     const m = getMonthData();
+    const row = m.carro.manutencaoItens.find(i=>i.id===del.dataset.del);
+    if(row && !ehDonoDoItem(row.pagador)){ toast('Você só pode excluir lançamentos seus'); return; }
     m.carro.manutencaoItens = m.carro.manutencaoItens.filter(i=>i.id!==del.dataset.del);
     marcarAlterado();
     return;
@@ -1950,7 +1971,7 @@ function renderAcordos(){
       <td><input type="date" data-id="${a.id}" data-campo="data" class="in-acordo" value="${a.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(a.pagador,'acordos',a.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></div></td>
       <td><span class="badge ${quitado||pagoMes?'teal':'magenta'}" data-badge="${a.id}">${quitado ? 'Quitado' : (pagoMes ? 'Pago este mês' : (totais>0 ? (totais-pagas)+' restantes' : 'em aberto'))}</span></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${a.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<button class="btn-del" data-del="${a.id}">✕</button></div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${a.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(a.pagador)?`<button class="btn-del" data-del="${a.id}">✕</button>`:''}</div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalAcordos();
@@ -1983,6 +2004,8 @@ document.getElementById('tbody-acordos').addEventListener('click', (e)=>{
   const del = e.target.closest('[data-del]');
   if(del){
     const m = getMonthData();
+    const row = m.acordos.find(a=>a.id===del.dataset.del);
+    if(row && !ehDonoDoItem(row.pagador)){ toast('Você só pode excluir lançamentos seus'); return; }
     m.acordos = m.acordos.filter(a=>a.id!==del.dataset.del);
     marcarAlterado();
     return;
