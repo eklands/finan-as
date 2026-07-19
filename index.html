@@ -216,6 +216,7 @@ main{max-width:1360px;margin:0 auto;padding:22px;}
 .card-title{font-family:var(--font-display);font-weight:700;font-size:13px;letter-spacing:.05em;text-transform:uppercase;color:var(--text);}
 .card-title span{color:var(--muted-2);font-weight:400;text-transform:none;letter-spacing:0;margin-left:6px;font-family:var(--font-body);}
 .card-total{font-family:var(--font-mono);font-weight:700;font-size:17px;color:var(--accent,var(--teal));}
+.total-tag{font-size:9.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;}
 
 /* KPI */
 .kpi{padding:18px 20px;}
@@ -583,7 +584,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
       <div class="card" style="--accent:var(--magenta)">
         <div class="card-head">
           <div class="card-title">Despesas rotineiras da casa <span>luz, água, gás, internet e afins</span></div>
-          <div class="card-total" id="total-despesas" style="color:var(--magenta)">R$ 0,00</div>
+          <div style="text-align:right;">
+            <div class="total-tag">total lançado</div>
+            <div class="card-total" id="total-despesas" style="color:var(--magenta)">R$ 0,00</div>
+          </div>
         </div>
         <table class="tabela">
           <thead><tr><th>Categoria</th><th>Valor do mês</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
@@ -599,7 +603,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
       <div class="card" style="--accent:var(--coral)">
         <div class="card-head">
           <div class="card-title">Mercado, lanches &amp; gastos do dia a dia <span>compras variadas lançadas durante o mês</span></div>
-          <div class="card-total" id="total-mercado" style="color:var(--coral)">R$ 0,00</div>
+          <div style="text-align:right;">
+            <div class="total-tag">total lançado</div>
+            <div class="card-total" id="total-mercado" style="color:var(--coral)">R$ 0,00</div>
+          </div>
         </div>
         <table class="tabela">
           <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
@@ -663,7 +670,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
       <div class="card" style="--accent:var(--amber);margin-bottom:16px;">
         <div class="card-head">
           <div class="card-title">Manutenção, peças e serviços <span>consertos lançados durante o mês</span></div>
-          <div class="card-total" id="total-manutencao" style="color:var(--amber)">R$ 0,00</div>
+          <div style="text-align:right;">
+            <div class="total-tag">total lançado</div>
+            <div class="card-total" id="total-manutencao" style="color:var(--amber)">R$ 0,00</div>
+          </div>
         </div>
         <table class="tabela">
           <thead><tr><th>Descrição</th><th>Valor (R$)</th><th>Data</th><th>Pago?</th><th class="col-acao"></th></tr></thead>
@@ -691,7 +701,10 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
       <div class="card" style="--accent:var(--magenta)">
         <div class="card-head">
           <div class="card-title">Parcelas de acordos <span>dívidas, negociações e parcelamentos</span></div>
-          <div class="card-total" id="total-acordos" style="color:var(--magenta)">R$ 0,00</div>
+          <div style="text-align:right;">
+            <div class="total-tag">em aberto no mês</div>
+            <div class="card-total" id="total-acordos" style="color:var(--magenta)">R$ 0,00</div>
+          </div>
         </div>
         <table class="tabela">
           <thead><tr><th>Descrição</th><th>Parcela (R$)</th><th>Parcelas totais</th><th>Parcelas pagas</th><th>Data</th><th>Pago?</th><th>Situação</th><th class="col-acao"></th></tr></thead>
