@@ -510,7 +510,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
             <div class="campo-inline" id="lr-titular-wrap">
               <label>Titular</label>
               <select id="lr-titular">
-                <option value="Você">Você</option>
+                <option value="Você">Marido</option>
                 <option value="Esposa">Esposa</option>
               </select>
             </div>
@@ -1150,18 +1150,26 @@ document.addEventListener('click', (e)=>{
   const tabela = btn.dataset.pagadorTabela;
   const id = btn.dataset.pagadorId;
   const m = getMonthData();
+  let item = null, campo = 'pagador';
   switch(tabela){
-    case 'despesas': { const row = m.despesasCasa.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
-    case 'mercado': { const row = m.mercado.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
-    case 'manutencao': { const row = m.carro.manutencaoItens.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
-    case 'combustivel': { const row = m.carro.combustivel.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
-    case 'investimento': { const row = m.investimentos.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
-    case 'acordos': { const row = m.acordos.find(x=>x.id===id); if(row) row.pagador = alternarPagador(row.pagador); break; }
-    case 'financiamento': { m.financiamento.pagador = alternarPagador(m.financiamento.pagador); break; }
-    case 'condominio': { m.condominio.pagador = alternarPagador(m.condominio.pagador); break; }
-    case 'carroFixo': { m.carro.pagadorFixo = alternarPagador(m.carro.pagadorFixo); break; }
+    case 'despesas': item = m.despesasCasa.find(x=>x.id===id); break;
+    case 'mercado': item = m.mercado.find(x=>x.id===id); break;
+    case 'manutencao': item = m.carro.manutencaoItens.find(x=>x.id===id); break;
+    case 'combustivel': item = m.carro.combustivel.find(x=>x.id===id); break;
+    case 'investimento': item = m.investimentos.find(x=>x.id===id); break;
+    case 'acordos': item = m.acordos.find(x=>x.id===id); break;
+    case 'financiamento': item = m.financiamento; break;
+    case 'condominio': item = m.condominio; break;
+    case 'carroFixo': item = m.carro; campo = 'pagadorFixo'; break;
     default: return;
   }
+  if(!item) return;
+  // só o próprio dono atual do lançamento pode reatribuir — evita alguém "roubar posse" pra depois conseguir excluir
+  if(!ehDonoDoItem(item[campo])){
+    toast('Você só pode alterar seus próprios lançamentos');
+    return;
+  }
+  item[campo] = alternarPagador(item[campo]);
   marcarAlterado();
 });
 
@@ -1241,19 +1249,19 @@ document.getElementById('lr-confirmar').addEventListener('click', ()=>{
       m.receitas.push({ id: uid(), titular, instituicao:'', descricao: descricaoFinal, valor });
       break;
     case 'despesa':
-      m.despesasCasa.push({ id: uid(), categoria: descricaoFinal, valor, pago:false, data, confirmado:false, pagador:'Você' });
+      m.despesasCasa.push({ id: uid(), categoria: descricaoFinal, valor, pago:false, data, confirmado:false, pagador: titularAtual() || 'Você' });
       break;
     case 'mercado':
-      m.mercado.push({ id: uid(), descricao: descricaoFinal, valor, pago:false, data, confirmado:false, pagador:'Você' });
+      m.mercado.push({ id: uid(), descricao: descricaoFinal, valor, pago:false, data, confirmado:false, pagador: titularAtual() || 'Você' });
       break;
     case 'combustivel':
       m.carro.combustivel.push({ id: uid(), data, valor, litros:0, km:0 });
       break;
     case 'manutencao':
-      m.carro.manutencaoItens.push({ id: uid(), descricao: descricaoFinal, valor, pago:false, data, confirmado:false, pagador:'Você' });
+      m.carro.manutencaoItens.push({ id: uid(), descricao: descricaoFinal, valor, pago:false, data, confirmado:false, pagador: titularAtual() || 'Você' });
       break;
     case 'acordo':
-      m.acordos.push({ id: uid(), descricao: descricaoFinal, parcela: valor, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data, confirmado:false, pagador:'Você' });
+      m.acordos.push({ id: uid(), descricao: descricaoFinal, parcela: valor, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data, confirmado:false, pagador: titularAtual() || 'Você' });
       break;
   }
   toast(`Lançado em ${NOMES_DESTINO_LR[destino]}`);
@@ -1361,10 +1369,11 @@ function ehDonoDoItem(pagador){
 // Detecta itens com valor repetido dentro da mesma lista (ignorando data), exceto os já confirmados como legítimos
 // Gera o avatar clicável de "quem pagou" (Você/Esposa)
 function avatarPagador(pagador, tabela, id){
-  const p = pagador === 'Esposa' ? 'Esposa' : 'Você';
-  const inicial = p === 'Esposa' ? 'E' : 'V';
+  const p = pagador === 'Esposa' ? 'Esposa' : 'Você'; // valor interno, não muda
+  const rotulo = p === 'Esposa' ? 'Esposa' : 'Marido'; // texto exibido
+  const inicial = p === 'Esposa' ? 'E' : 'M';
   const classe = p === 'Esposa' ? 'p-esposa' : 'p-voce';
-  return `<button type="button" class="avatar-pagador ${classe}" data-pagador-tabela="${tabela}" data-pagador-id="${id}" title="Pago por: ${p} — clique para alternar">${inicial}</button>`;
+  return `<button type="button" class="avatar-pagador ${classe}" data-pagador-tabela="${tabela}" data-pagador-id="${id}" title="Pago por: ${rotulo} — clique para alternar">${inicial}</button>`;
 }
 function alternarPagador(atual){
   return atual === 'Esposa' ? 'Você' : 'Esposa';
@@ -1528,7 +1537,7 @@ function renderReceitas(){
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><select data-id="${r.id}" data-campo="titular" class="in-receita">
-            <option value="Você" ${r.titular==='Você'?'selected':''}>Você</option>
+            <option value="Você" ${r.titular==='Você'?'selected':''}>Marido</option>
             <option value="Esposa" ${r.titular==='Esposa'?'selected':''}>Esposa</option>
           </select></td>
       <td><input type="text" data-id="${r.id}" data-campo="instituicao" class="in-receita" value="${escAttr(r.instituicao)}"></td>
@@ -1632,7 +1641,7 @@ document.getElementById('tbody-despesas').addEventListener('click', (e)=>{
 });
 document.getElementById('add-despesa').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false, data:'', confirmado:false, pagador:'Você' });
+  m.despesasCasa.push({ id: uid(), categoria:'Nova categoria', valor:0, pago:false, data:'', confirmado:false, pagador: titularAtual() || 'Você' });
   marcarAlterado();
 });
 
@@ -1731,7 +1740,7 @@ document.getElementById('tbody-mercado').addEventListener('click', (e)=>{
 });
 document.getElementById('add-mercado').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.mercado.push({ id: uid(), descricao:'Novo gasto', valor:0, pago:false, data:'', confirmado:false, pagador:'Você' });
+  m.mercado.push({ id: uid(), descricao:'Novo gasto', valor:0, pago:false, data:'', confirmado:false, pagador: titularAtual() || 'Você' });
   marcarAlterado();
 });
 
@@ -1901,7 +1910,7 @@ document.getElementById('tbody-manutencao').addEventListener('click', (e)=>{
 });
 document.getElementById('add-manutencao').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false, data:'', confirmado:false, pagador:'Você' });
+  m.carro.manutencaoItens.push({ id: uid(), descricao:'Novo item', valor:0, pago:false, data:'', confirmado:false, pagador: titularAtual() || 'Você' });
   marcarAlterado();
 });
 document.getElementById('tbody-combustivel').addEventListener('change', (e)=>{
@@ -1927,7 +1936,7 @@ document.getElementById('tbody-combustivel').addEventListener('click', (e)=>{
 document.getElementById('add-combustivel').addEventListener('click', ()=>{
   const m = getMonthData();
   const hoje = new Date().toISOString().slice(0,10);
-  m.carro.combustivel.push({ id: uid(), data: hoje, valor:0, litros:0, km:0, pagador:'Você' });
+  m.carro.combustivel.push({ id: uid(), data: hoje, valor:0, litros:0, km:0, pagador: titularAtual() || 'Você' });
   renderCarro();
   salvarMesDebounced(currentMonth);
 });
@@ -2025,7 +2034,7 @@ document.getElementById('tbody-acordos').addEventListener('click', (e)=>{
 });
 document.getElementById('add-acordo').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data:'', confirmado:false, pagador:'Você' });
+  m.acordos.push({ id: uid(), descricao:'Novo acordo', parcela:0, parcelasTotais:0, parcelasPagas:0, pagoMes:false, data:'', confirmado:false, pagador: titularAtual() || 'Você' });
   marcarAlterado();
 });
 
@@ -2120,7 +2129,7 @@ document.getElementById('tbody-investimentos').addEventListener('click', (e)=>{
 });
 document.getElementById('add-investimento').addEventListener('click', ()=>{
   const m = getMonthData();
-  m.investimentos.push({ id: uid(), descricao:'Novo investimento', valorAtual:0, aporteMes:0, pagador:'Você' });
+  m.investimentos.push({ id: uid(), descricao:'Novo investimento', valorAtual:0, aporteMes:0, pagador: titularAtual() || 'Você' });
   renderReservasInvestimentos();
   salvarMesDebounced(currentMonth);
 });
