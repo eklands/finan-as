@@ -848,7 +848,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
 
   </main>
 
-  <div class="footer-nota">Painel Financeiro Família — dados sincronizados via Firebase Firestore. Índices e projeções são estimativas e não substituem orientação financeira profissional.<br><span style="opacity:.5;">versão do arquivo: 2026-07-20 00:15</span></div>
+  <div class="footer-nota">Painel Financeiro Família — dados sincronizados via Firebase Firestore. Índices e projeções são estimativas e não substituem orientação financeira profissional.<br><span style="opacity:.5;">versão do arquivo: 2026-07-20 00:35</span></div>
 </div>
 
 <div class="toast" id="toast">✓ <span id="toast-msg">Salvo</span></div>
@@ -1609,6 +1609,7 @@ document.getElementById('tbody-despesas').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-despesa'); if(!el) return;
   const m = getMonthData();
   const row = m.despesasCasa.find(d=>d.id===el.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderDespesas(); return; }
   if(el.dataset.campo==='valor') row.confirmado = false;
   row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
   renderDespesas();
@@ -1619,6 +1620,7 @@ document.getElementById('tbody-despesas').addEventListener('change', (e)=>{
   const chk = e.target.closest('.chk-despesa'); if(!chk) return;
   const m = getMonthData();
   const row = m.despesasCasa.find(d=>d.id===chk.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderDespesas(); return; }
   row.pago = chk.checked;
   atualizarTotalDespesas();
   marcarAlterado();
@@ -1709,6 +1711,7 @@ document.getElementById('tbody-mercado').addEventListener('change', (e)=>{
   if(chk){
     const m = getMonthData();
     const row = m.mercado.find(d=>d.id===chk.dataset.id); if(!row) return;
+    if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderMercado(); return; }
     row.pago = chk.checked;
     atualizarTotalMercado();
     marcarAlterado();
@@ -1717,6 +1720,7 @@ document.getElementById('tbody-mercado').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-mercado'); if(!el) return;
   const m = getMonthData();
   const row = m.mercado.find(d=>d.id===el.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderMercado(); return; }
   if(el.dataset.campo==='valor') row.confirmado = false;
   row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
   renderMercado();
@@ -1778,6 +1782,7 @@ function renderFinanciamentoDerivados(){
 ['fin-descricao','fin-parcela','fin-saldo','fin-total','fin-restantes'].forEach(id=>{
   document.getElementById(id).addEventListener('change', ()=>{
     const m = getMonthData();
+    if(!ehDonoDoItem(m.financiamento.pagador)){ toast('Você só pode alterar lançamentos seus'); renderFinanciamento(); return; }
     m.financiamento.descricao = document.getElementById('fin-descricao').value;
     m.financiamento.parcela = parseBRL(document.getElementById('fin-parcela').value);
     m.financiamento.saldoDevedor = parseBRL(document.getElementById('fin-saldo').value);
@@ -1790,6 +1795,7 @@ function renderFinanciamentoDerivados(){
 });
 document.getElementById('fin-pago').addEventListener('change', (e)=>{
   const m = getMonthData();
+  if(!ehDonoDoItem(m.financiamento.pagador)){ toast('Você só pode alterar lançamentos seus'); e.target.checked = !e.target.checked; return; }
   m.financiamento.pago = e.target.checked;
   marcarAlterado();
 });
@@ -1800,12 +1806,14 @@ document.getElementById('fin-data').addEventListener('change', (e)=>{
 });
 document.getElementById('cond-valor').addEventListener('change', ()=>{
   const m = getMonthData();
+  if(!ehDonoDoItem(m.condominio.pagador)){ toast('Você só pode alterar lançamentos seus'); renderFinanciamento(); return; }
   m.condominio.valor = parseBRL(document.getElementById('cond-valor').value);
   salvarMesDebounced(currentMonth);
   agendarVisaoGeral();
 });
 document.getElementById('cond-pago').addEventListener('change', (e)=>{
   const m = getMonthData();
+  if(!ehDonoDoItem(m.condominio.pagador)){ toast('Você só pode alterar lançamentos seus'); e.target.checked = !e.target.checked; return; }
   m.condominio.pago = e.target.checked;
   marcarAlterado();
 });
@@ -1879,6 +1887,7 @@ document.getElementById('tbody-manutencao').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-manutencao'); if(!el) return;
   const m = getMonthData();
   const row = m.carro.manutencaoItens.find(i=>i.id===el.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderCarro(); return; }
   if(el.dataset.campo==='valor') row.confirmado = false;
   row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
   renderCarro();
@@ -1889,6 +1898,7 @@ document.getElementById('tbody-manutencao').addEventListener('change', (e)=>{
   const chk = e.target.closest('.chk-manutencao'); if(!chk) return;
   const m = getMonthData();
   const row = m.carro.manutencaoItens.find(i=>i.id===chk.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderCarro(); return; }
   row.pago = chk.checked;
   renderCarroDerivados();
   marcarAlterado();
@@ -1920,6 +1930,7 @@ document.getElementById('tbody-combustivel').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-combustivel'); if(!el) return;
   const m = getMonthData();
   const row = m.carro.combustivel.find(c=>c.id===el.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderCarro(); return; }
   const campo = el.dataset.campo;
   row[campo] = campo==='data' ? el.value : (campo==='km' ? (parseFloat(el.value)||0) : parseBRL(el.value));
   renderCarroDerivados();
@@ -1946,6 +1957,7 @@ document.getElementById('add-combustivel').addEventListener('click', ()=>{
 ['carro-seguro','carro-outros'].forEach(id=>{
   document.getElementById(id).addEventListener('change', ()=>{
     const m = getMonthData();
+    if(!ehDonoDoItem(m.carro.pagadorFixo)){ toast('Você só pode alterar lançamentos seus'); renderCarro(); return; }
     m.carro.seguro = parseBRL(document.getElementById('carro-seguro').value);
     m.carro.outros = parseBRL(document.getElementById('carro-outros').value);
     renderCarroDerivados();
@@ -1955,6 +1967,7 @@ document.getElementById('add-combustivel').addEventListener('click', ()=>{
 });
 document.getElementById('carro-pago').addEventListener('change', (e)=>{
   const m = getMonthData();
+  if(!ehDonoDoItem(m.carro.pagadorFixo)){ toast('Você só pode alterar lançamentos seus'); e.target.checked = !e.target.checked; return; }
   m.carro.custosPagos = e.target.checked;
   marcarAlterado();
 });
@@ -2002,6 +2015,7 @@ document.getElementById('tbody-acordos').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-acordo'); if(!el) return;
   const m = getMonthData();
   const row = m.acordos.find(a=>a.id===el.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderAcordos(); return; }
   const campo = el.dataset.campo;
   if(campo==='parcela') row.confirmado = false;
   row[campo] = (campo==='descricao' || campo==='data') ? el.value : (campo==='parcela' ? parseBRL(el.value) : (parseInt(el.value)||0));
@@ -2013,6 +2027,7 @@ document.getElementById('tbody-acordos').addEventListener('change', (e)=>{
   const chk = e.target.closest('.chk-acordo'); if(!chk) return;
   const m = getMonthData();
   const row = m.acordos.find(a=>a.id===chk.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderAcordos(); return; }
   row.pagoMes = chk.checked;
   renderAcordos();
   marcarAlterado();
@@ -2113,6 +2128,7 @@ document.getElementById('tbody-investimentos').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-investimento'); if(!el) return;
   const m = getMonthData();
   const row = m.investimentos.find(i=>i.id===el.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); renderReservasInvestimentos(); return; }
   const campo = el.dataset.campo;
   row[campo] = campo==='descricao' ? el.value : parseBRL(el.value);
   document.getElementById('total-investimentos').textContent = fmtNum(somaArr(m.investimentos,'valorAtual'));
