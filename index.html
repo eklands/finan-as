@@ -848,7 +848,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
 
   </main>
 
-  <div class="footer-nota">Painel Financeiro Família — dados sincronizados via Firebase Firestore. Índices e projeções são estimativas e não substituem orientação financeira profissional.<br><span style="opacity:.5;">versão do arquivo: 2026-07-20 00:35</span></div>
+  <div class="footer-nota">Painel Financeiro Família — dados sincronizados via Firebase Firestore. Índices e projeções são estimativas e não substituem orientação financeira profissional.<br><span style="opacity:.5;">versão do arquivo: 2026-07-20 01:00</span></div>
 </div>
 
 <div class="toast" id="toast">✓ <span id="toast-msg">Salvo</span></div>
@@ -1194,11 +1194,13 @@ document.getElementById('btn-ver-calculo').addEventListener('click', ()=>{
 /* ============ SALDO INICIAL (HERDADO DE MESES ANTERIORES) ============ */
 document.getElementById('saldo-inicial-voce').addEventListener('change', (e)=>{
   const m = getMonthData();
+  if(!ehDonoDoItem('Você')){ toast('Você só pode alterar seu próprio saldo inicial'); renderVisaoGeral(); return; }
   m.saldoInicialVoce = parseBRL(e.target.value);
   marcarAlterado();
 });
 document.getElementById('saldo-inicial-esposa').addEventListener('change', (e)=>{
   const m = getMonthData();
+  if(!ehDonoDoItem('Esposa')){ toast('Você só pode alterar seu próprio saldo inicial'); renderVisaoGeral(); return; }
   m.saldoInicialEsposa = parseBRL(e.target.value);
   marcarAlterado();
 });
@@ -1554,6 +1556,7 @@ document.getElementById('tbody-receitas').addEventListener('change', (e)=>{
   const el = e.target.closest('.in-receita'); if(!el) return;
   const m = getMonthData();
   const row = m.receitas.find(r=>r.id===el.dataset.id); if(!row) return;
+  if(!ehDonoDoItem(row.titular)){ toast('Você só pode alterar lançamentos seus'); renderReceitas(); return; }
   row[el.dataset.campo] = el.dataset.campo==='valor' ? parseBRL(el.value) : el.value;
   document.getElementById('total-receitas').textContent = fmtNum(somaArr(m.receitas,'valor'));
   salvarMesDebounced(currentMonth);
@@ -1589,7 +1592,7 @@ function renderDespesas(){
       <td><input type="text" inputmode="decimal" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${formatBRLInput(d.valor)}"></td>
       <td><input type="date" data-id="${d.id}" data-campo="data" class="in-despesa" value="${d.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(d.pagador,'despesas',d.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(d.pagador)?`<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select><button class="btn-del" data-del="${d.id}">✕</button>`:''}</div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${(dup&&ehDonoDoItem(d.pagador))?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(d.pagador)?`<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select><button class="btn-del" data-del="${d.id}">✕</button>`:''}</div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalDespesas();
@@ -1639,6 +1642,7 @@ document.getElementById('tbody-despesas').addEventListener('click', (e)=>{
   if(conf){
     const m = getMonthData();
     const row = m.despesasCasa.find(d=>d.id===conf.dataset.confirmar); if(!row) return;
+    if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); return; }
     row.confirmado = true;
     marcarAlterado();
   }
@@ -1692,7 +1696,7 @@ function renderMercado(){
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-mercado" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-mercado" value="${it.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'mercado',it.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-mercado" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(it.pagador)?`<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select><button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${(dup&&ehDonoDoItem(it.pagador))?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(it.pagador)?`<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select><button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalMercado();
@@ -1741,6 +1745,7 @@ document.getElementById('tbody-mercado').addEventListener('click', (e)=>{
   if(conf){
     const m = getMonthData();
     const row = m.mercado.find(d=>d.id===conf.dataset.confirmar); if(!row) return;
+    if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); return; }
     row.confirmado = true;
     marcarAlterado();
   }
@@ -1801,6 +1806,7 @@ document.getElementById('fin-pago').addEventListener('change', (e)=>{
 });
 document.getElementById('fin-data').addEventListener('change', (e)=>{
   const m = getMonthData();
+  if(!ehDonoDoItem(m.financiamento.pagador)){ toast('Você só pode alterar lançamentos seus'); renderFinanciamento(); return; }
   m.financiamento.data = e.target.value;
   salvarMesDebounced(currentMonth);
 });
@@ -1819,6 +1825,7 @@ document.getElementById('cond-pago').addEventListener('change', (e)=>{
 });
 document.getElementById('cond-data').addEventListener('change', (e)=>{
   const m = getMonthData();
+  if(!ehDonoDoItem(m.condominio.pagador)){ toast('Você só pode alterar lançamentos seus'); renderFinanciamento(); return; }
   m.condominio.data = e.target.value;
   salvarMesDebounced(currentMonth);
 });
@@ -1845,7 +1852,7 @@ function renderCarro(){
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-manutencao" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-manutencao" value="${it.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'manutencao',it.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(it.pagador)?`<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select><button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${(dup&&ehDonoDoItem(it.pagador))?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(it.pagador)?`<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select><button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
     tbodyM.appendChild(tr);
   });
 
@@ -1917,6 +1924,7 @@ document.getElementById('tbody-manutencao').addEventListener('click', (e)=>{
   if(conf){
     const m = getMonthData();
     const row = m.carro.manutencaoItens.find(i=>i.id===conf.dataset.confirmar); if(!row) return;
+    if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); return; }
     row.confirmado = true;
     marcarAlterado();
   }
@@ -1973,6 +1981,7 @@ document.getElementById('carro-pago').addEventListener('change', (e)=>{
 });
 document.getElementById('carro-data').addEventListener('change', (e)=>{
   const m = getMonthData();
+  if(!ehDonoDoItem(m.carro.pagadorFixo)){ toast('Você só pode alterar lançamentos seus'); renderCarro(); return; }
   m.carro.segurosOutrosData = e.target.value;
   salvarMesDebounced(currentMonth);
 });
@@ -2001,7 +2010,7 @@ function renderAcordos(){
       <td><input type="date" data-id="${a.id}" data-campo="data" class="in-acordo" value="${a.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(a.pagador,'acordos',a.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-acordo" data-id="${a.id}" ${pagoMes?'checked':''} ${quitado?'disabled':''}></div></td>
       <td><span class="badge ${quitado||pagoMes?'teal':'magenta'}" data-badge="${a.id}">${quitado ? 'Quitado' : (pagoMes ? 'Pago este mês' : (totais>0 ? (totais-pagas)+' restantes' : 'em aberto'))}</span></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${a.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(a.pagador)?`<button class="btn-del" data-del="${a.id}">✕</button>`:''}</div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${(dup&&ehDonoDoItem(a.pagador))?`<button class="btn-confirmar-dup" data-confirmar="${a.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(a.pagador)?`<button class="btn-del" data-del="${a.id}">✕</button>`:''}</div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalAcordos();
@@ -2046,6 +2055,7 @@ document.getElementById('tbody-acordos').addEventListener('click', (e)=>{
   if(conf){
     const m = getMonthData();
     const row = m.acordos.find(a=>a.id===conf.dataset.confirmar); if(!row) return;
+    if(!ehDonoDoItem(row.pagador)){ toast('Você só pode alterar lançamentos seus'); return; }
     row.confirmado = true;
     marcarAlterado();
   }
