@@ -848,7 +848,7 @@ tr.linha-duplicada input:not([type=checkbox]):focus{border-color:#ffe066;}
 
   </main>
 
-  <div class="footer-nota">Painel Financeiro Família — dados sincronizados via Firebase Firestore. Índices e projeções são estimativas e não substituem orientação financeira profissional.<br><span style="opacity:.5;">versão do arquivo: 2026-07-19 22:05</span></div>
+  <div class="footer-nota">Painel Financeiro Família — dados sincronizados via Firebase Firestore. Índices e projeções são estimativas e não substituem orientação financeira profissional.<br><span style="opacity:.5;">versão do arquivo: 2026-07-20 00:15</span></div>
 </div>
 
 <div class="toast" id="toast">✓ <span id="toast-msg">Salvo</span></div>
@@ -1589,7 +1589,7 @@ function renderDespesas(){
       <td><input type="text" inputmode="decimal" data-id="${d.id}" data-campo="valor" class="in-despesa" value="${formatBRLInput(d.valor)}"></td>
       <td><input type="date" data-id="${d.id}" data-campo="data" class="in-despesa" value="${d.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(d.pagador,'despesas',d.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-despesa" data-id="${d.id}" ${d.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select>${ehDonoDoItem(d.pagador)?`<button class="btn-del" data-del="${d.id}">✕</button>`:''}</div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${d.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(d.pagador)?`<select class="mover-select" data-mover-origem="despesas" data-mover-id="${d.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('despesas')}</select><button class="btn-del" data-del="${d.id}">✕</button>`:''}</div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalDespesas();
@@ -1664,6 +1664,7 @@ function moverItem(origemKey, itemId, destinoKey){
   const arrOrigem = origem.getArr(m);
   const item = arrOrigem.find(i=>i.id===itemId);
   if(!item) return;
+  if(!ehDonoDoItem(item.pagador)){ toast('Você só pode mover lançamentos seus'); renderTudo(); return; }
   origem.setArr(m, arrOrigem.filter(i=>i.id!==itemId));
   const textoDescricao = item[origem.campoDesc] || item.descricao || item.categoria || '';
   const novoItem = { id: uid(), valor: parseFloat(item.valor)||0, pago: !!item.pago, data: item.data||'', confirmado:false, pagador: item.pagador==='Esposa'?'Esposa':'Você' };
@@ -1689,7 +1690,7 @@ function renderMercado(){
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-mercado" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-mercado" value="${it.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'mercado',it.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-mercado" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select>${ehDonoDoItem(it.pagador)?`<button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(it.pagador)?`<select class="mover-select" data-mover-origem="mercado" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('mercado')}</select><button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
     tbody.appendChild(tr);
   });
   atualizarTotalMercado();
@@ -1836,7 +1837,7 @@ function renderCarro(){
       <td><input type="text" inputmode="decimal" data-id="${it.id}" data-campo="valor" class="in-manutencao" value="${formatBRLInput(it.valor||0)}"></td>
       <td><input type="date" data-id="${it.id}" data-campo="data" class="in-manutencao" value="${it.data||''}"></td>
       <td style="text-align:center;"><div class="avatar-inline" style="justify-content:center;">${avatarPagador(it.pagador,'manutencao',it.id)}<input type="checkbox" title="Só desconta do saldo depois de marcado como pago" class="chk-manutencao" data-id="${it.id}" ${it.pago?'checked':''}></div></td>
-      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select>${ehDonoDoItem(it.pagador)?`<button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
+      <td class="col-acao"><div class="col-acao-dup">${dup?`<button class="btn-confirmar-dup" data-confirmar="${it.id}" title="Confirmar que não é engano — valor repetido de propósito">✓</button>`:''}${ehDonoDoItem(it.pagador)?`<select class="mover-select" data-mover-origem="manutencao" data-mover-id="${it.id}" title="Mover para outra aba"><option value="" selected disabled>➜</option>${opcoesMover('manutencao')}</select><button class="btn-del" data-del="${it.id}">✕</button>`:''}</div></td>`;
     tbodyM.appendChild(tr);
   });
 
