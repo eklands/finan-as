@@ -1362,7 +1362,9 @@ function titularAtual(){
   if(!currentUser || !currentUser.email) return null;
   return EMAIL_PARA_TITULAR[currentUser.email.toLowerCase()] || null;
 }
+const EMAIL_ADMIN = 'eklands@gmail.com'; // conta que administra o painel — pode corrigir/excluir qualquer lançamento
 function ehDonoDoItem(pagador){
+  if(currentUser && currentUser.email && currentUser.email.toLowerCase() === EMAIL_ADMIN) return true;
   const dono = (pagador === 'Esposa') ? 'Esposa' : 'Você';
   return dono === titularAtual();
 }
